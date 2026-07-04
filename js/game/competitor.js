@@ -1,0 +1,168 @@
+(function() {
+    const competitorState = {
+        name: 'Snail',
+        avatarHtml: '',
+        wpm: 30,
+        progress: 0,
+        type: 'snail', // snail, rabbit, professor, android
+        isTyping: true,
+        rabbitPauseTimer: 0
+    };
+
+    const DOMElements = {
+        raceTrack: () => document.getElementById('race-track')
+    };
+
+    // Beautiful Premium Vector Icons (using theme-sensitive var(--accent-secondary))
+    const RACER_ICONS = {
+        snail: `<svg class="w-8 h-8 text-[var(--accent-secondary)] drop-shadow-[0_0_8px_var(--accent-secondary)]" viewBox="0 0 24 24" fill="currentColor"><path d="M20 16a3 3 0 0 0-3-3H6.5C5.12 13 4 11.88 4 10.5S5.12 8 6.5 8H18V6H6.5C3.46 6 1 8.46 1 11.5S3.46 17 6.5 17H17a1 1 0 0 1 1 1s-.9 2-2 2H5v2h11c3.31 0 6-2.69 6-6zM15 9.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5z"/></svg>`,
+        rabbit: `<svg class="w-8 h-8 text-[var(--accent-secondary)] drop-shadow-[0_0_8px_var(--accent-secondary)]" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9c.55 0 1-.45 1-1V4c0-1.66-1.34-3-3-3s-3 1.34-3 3v4c0 .55.45 1 1 1h4Zm-8-2V4c0-1.66-1.34-3-3-3S5 2.34 5 4v3c0 .55.45 1 1 1h4c.55 0 1-.45 1-1Zm6.5 4h-11C4.01 11 2.02 13.15 2 15.68V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-3.32c-.02-2.53-2.01-4.68-4.5-4.68Z"/></svg>`,
+        professor: `<svg class="w-8 h-8 text-[var(--accent-secondary)] drop-shadow-[0_0_8px_var(--accent-secondary)]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.5c-2.48 0-4.5-2.02-4.5-4.5h9c0 2.48-2.02 4.5-4.5 4.5Z"/></svg>`,
+        android: `<svg class="w-8 h-8 text-[var(--accent-secondary)] drop-shadow-[0_0_8px_var(--accent-secondary)]" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6c0-3.87 3.13-7 7-7s7 3.13 7 7Zm-5-8.82A4.015 4.015 0 0 0 12 3a4.015 4.015 0 0 0-2 1.18V3a1 1 0 0 0-2 0v2.6c0 1.2.4 2.3 1.1 3.2C9.5 9.3 10.7 10 12 10s2.5-.7 3.9-2.2c.7-.9 1.1-2 1.1-3.2V3a1 1 0 0 0-2 0v1.18Z"/></svg>`
+    };
+
+    // 10 AI Opponents with detailed features, strengths, and speed personalities
+    const AI_OPPONENTS = [
+        { name: "Slowy", type: "snail", speedOffset: -12, icon: RACER_ICONS.snail, desc: "A slow, deliberate snail. Never pauses, types at a calm, rhythmic speed." },
+        { name: "Hoppy", type: "rabbit", speedOffset: 2, icon: RACER_ICONS.rabbit, desc: "A bouncy rabbit. Fast speed bursts but pauses occasionally to rest." },
+        { name: "Chloe", type: "professor", speedOffset: 1, icon: RACER_ICONS.professor, desc: "An academic typewriter. Consistent pace with zero mistakes." },
+        { name: "Shelly", type: "snail", speedOffset: -8, icon: RACER_ICONS.snail, desc: "A steady, armored snail. Slow pace, completely linear progress." },
+        { name: "Buster", type: "rabbit", speedOffset: 5, icon: RACER_ICONS.rabbit, desc: "A energetic hare. Highly aggressive sprints, challenging to beat." },
+        { name: "Sophia", type: "professor", speedOffset: 3, icon: RACER_ICONS.professor, desc: "A precise educator. Extremely steady mid-to-high velocity." },
+        { name: "Byte", type: "android", speedOffset: 7, icon: RACER_ICONS.android, desc: "A processing droid. Highly consistent, mechanical, fast movements." },
+        { name: "Dash", type: "rabbit", speedOffset: 9, icon: RACER_ICONS.rabbit, desc: "A hyper-active bunny. Extreme bursts of speed, pauses rarely." },
+        { name: "Vector", type: "android", speedOffset: 12, icon: RACER_ICONS.android, desc: "A military-grade cyborg. Flawless pacing, expert speed tiers." },
+        { name: "Nova", type: "android", speedOffset: 18, icon: RACER_ICONS.android, desc: "The typing singularity. Blazing fast mechanical speed." }
+    ];
+
+    function setupCompetitor(profileSettings, bestWpm = 0, textLength) {
+        const raceTrack = DOMElements.raceTrack();
+        
+        if (bestWpm > 0) {
+            raceTrack.innerHTML = `
+                <div class="lane-splitter" style="top: 33.3%;"></div>
+                <div class="lane-splitter" style="top: 66.6%;"></div>
+                <div class="finish-line"></div>
+            `;
+        } else {
+            raceTrack.innerHTML = `
+                <div class="lane-splitter" style="top: 50%;"></div>
+                <div class="finish-line"></div>
+            `;
+        }
+
+        const playerRank = profileSettings.currentRank || 'Mr. Zero';
+        const isLegend = ['Legend', 'Myth', 'Epic', 'Titan', 'Divine', 'Ultimate', 'Supreme', 'Immortal', 'Eternal'].includes(playerRank);
+
+        const baselineWpm = bestWpm > 0 ? bestWpm : profileSettings.aiWpm;
+
+        // Select from first 6 for normal players, or allow all 10 for advanced ranks
+        const poolLimit = isLegend ? 10 : 7;
+        const opponent = AI_OPPONENTS[Math.floor(Math.random() * poolLimit)];
+
+        competitorState.name = opponent.name;
+        competitorState.type = opponent.type;
+        competitorState.avatarHtml = opponent.icon;
+        competitorState.wpm = Math.max(25, Math.min(150, baselineWpm + opponent.speedOffset));
+        competitorState.progress = 0;
+        competitorState.isTyping = true;
+        competitorState.rabbitPauseTimer = 0;
+
+        const playerSelectedIcon = profileSettings.playerIcon || 'Ship';
+        let playerAvatarHtml = PLAYER_SVG_ICONS[playerSelectedIcon] || PLAYER_SVG_ICONS.Ship;
+        playerAvatarHtml = playerAvatarHtml.replace('class="w-6 h-6"', 'class="w-8 h-8 text-[var(--accent-primary)] drop-shadow-[0_0_8px_var(--accent-primary)]"');
+
+        // Setup lanes based on personal best presence
+        let racers = [];
+        if (bestWpm > 0) {
+            let ghostAvatarHtml = `<svg class="w-8 h-8 text-[var(--accent-primary)] opacity-40 drop-shadow-[0_0_4px_var(--accent-primary)]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 0 0-5 5v3c0 2.2 1.8 4 4 4h2c2.2 0 4-1.8 4-4V7a5 5 0 0 0-5-5zM9 18v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2"/></svg>`;
+            racers = [
+                { id: 'player-0', name: profileSettings.username, avatar: playerAvatarHtml, top: '20%' },
+                { id: 'player-ghost', name: `${profileSettings.username}'s Ghost (${bestWpm} WPM)`, avatar: ghostAvatarHtml, top: '50%' },
+                { id: 'player-1', name: competitorState.name, avatar: competitorState.avatarHtml, top: '80%' }
+            ];
+            competitorState.hasGhost = true;
+            competitorState.ghostWpm = bestWpm;
+            competitorState.ghostProgress = 0;
+        } else {
+            racers = [
+                { id: 'player-0', name: profileSettings.username, avatar: playerAvatarHtml, top: '25%' },
+                { id: 'player-1', name: competitorState.name, avatar: competitorState.avatarHtml, top: '75%' }
+            ];
+            competitorState.hasGhost = false;
+            competitorState.ghostWpm = 0;
+            competitorState.ghostProgress = 0;
+        }
+
+        racers.forEach(r => {
+            const el = document.createElement('div');
+            el.id = r.id;
+            el.className = `player-icon absolute flex items-center`;
+            el.style.top = r.top;
+            el.style.left = '10px';
+            el.innerHTML = `
+                <span class="avatar flex items-center justify-center">${r.avatar}</span>
+                <span class="nametag font-bold text-[0.7rem] bg-secondary/80 border border-white/5 px-2 py-0.5 rounded shadow-sm text-secondary">${r.name}</span>
+            `;
+            raceTrack.appendChild(el);
+        });
+    }
+
+    function updateCompetitor(startTime, textLength) {
+        if (!startTime) return;
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const aiPlayer = document.getElementById('player-1');
+        if (!aiPlayer) return;
+
+        let progressPercent = 0;
+
+        if (competitorState.type === 'rabbit') {
+            if (competitorState.isTyping) {
+                if (Math.random() < 0.1) {
+                    competitorState.isTyping = false;
+                    competitorState.rabbitPauseTimer = Date.now() + (500 + Math.random() * 1000);
+                }
+            } else {
+                if (Date.now() > competitorState.rabbitPauseTimer) {
+                    competitorState.isTyping = true;
+                }
+            }
+        }
+
+        if (competitorState.isTyping) {
+            const charsPerSecond = (competitorState.wpm * 5) / 60;
+            const totalCharsTypedByAI = charsPerSecond * elapsedSeconds;
+            progressPercent = (totalCharsTypedByAI / textLength) * 100;
+        } else {
+            const previousProgress = competitorState.progress;
+            progressPercent = previousProgress;
+        }
+
+        competitorState.progress = Math.min(100, progressPercent);
+        aiPlayer.style.left = `calc(${Math.min(100, competitorState.progress)}% - 44px)`;
+
+        // Update Ghost Racer position
+        if (competitorState.hasGhost) {
+            const ghostPlayer = document.getElementById('player-ghost');
+            if (ghostPlayer) {
+                const ghostCharsPerSecond = (competitorState.ghostWpm * 5) / 60;
+                const totalCharsTypedByGhost = ghostCharsPerSecond * elapsedSeconds;
+                const ghostProgressPercent = (totalCharsTypedByGhost / textLength) * 100;
+                
+                competitorState.ghostProgress = Math.min(100, ghostProgressPercent);
+                ghostPlayer.style.left = `calc(${Math.min(100, competitorState.ghostProgress)}% - 44px)`;
+            }
+        }
+    }
+
+    function getCompetitorState() {
+        return competitorState;
+    }
+
+    window.CompetitorAI = {
+        competitorState,
+        setupCompetitor,
+        updateCompetitor,
+        getCompetitorState
+    };
+})();

@@ -1,0 +1,253 @@
+(function() {
+    const DB_NAME = "ProTyperUltimateDB";
+    const DB_VERSION = 3;
+    let dbInstance = null;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            if (dbInstance) return resolve(dbInstance);
+
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onerror = (event) => {
+                console.error("IndexedDB initialization error:", event.target.error);
+                reject(event.target.error);
+            };
+
+            request.onsuccess = (event) => {
+                dbInstance = event.target.result;
+                resolve(dbInstance);
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+
+                // 1. user_profile store (key-value store for user configurations)
+                if (!db.objectStoreNames.contains("user_profile")) {
+                    db.createObjectStore("user_profile");
+                }
+
+                // 2. runs_history store (tracks game stats per level attempt)
+                if (!db.objectStoreNames.contains("runs_history")) {
+                    const runStore = db.createObjectStore("runs_history", { keyPath: "id", autoIncrement: true });
+                    runStore.createIndex("curriculum", "curriculum", { unique: false });
+                    runStore.createIndex("levelId", "levelId", { unique: false });
+                    runStore.createIndex("timestamp", "timestamp", { unique: false });
+                }
+
+                // 3. keystroke_analytics store (tracks typed character latency)
+                if (!db.objectStoreNames.contains("keystroke_analytics")) {
+                    const keyStore = db.createObjectStore("keystroke_analytics", { keyPath: "id", autoIncrement: true });
+                    keyStore.createIndex("char", "char", { unique: false });
+                }
+
+                // 4. exams_history store (tracks mock exams taken by user)
+                if (!db.objectStoreNames.contains("exams_history")) {
+                    const examStore = db.createObjectStore("exams_history", { keyPath: "id", autoIncrement: true });
+                    examStore.createIndex("timestamp", "timestamp", { unique: false });
+                }
+
+                // 5. mistakes_bucket store (tracks mistyped words)
+                if (!db.objectStoreNames.contains("mistakes_bucket")) {
+                    db.createObjectStore("mistakes_bucket", { keyPath: "word" });
+                }
+            };
+        });
+    }
+
+    function getStore(storeName, mode = "readonly") {
+        const tx = dbInstance.transaction(storeName, mode);
+        return tx.objectStore(storeName);
+    }
+
+    // User Profile Operations
+    function getUserProfile() {
+        return new Promise((resolve) => {
+            const store = getStore("user_profile", "readonly");
+            const request = store.get("config");
+            request.onsuccess = () => {
+                const defaultProfile = {
+                    username: "You",
+                    playerIcon: "Ship",
+                    aiWpm: 70,
+                    soundTheme: "Keyboard",
+                    colorTheme: "theme-dark",
+                    dailyStreak: 0,
+                    lastPlayedDate: null,
+                    totalWordsTyped: 0
+                };
+                resolve(request.result ? { ...defaultProfile, ...request.result } : defaultProfile);
+            };
+            request.onerror = () => resolve(null);
+        });
+    }
+
+    function saveUserProfile(profile) {
+        return new Promise((resolve, reject) => {
+            const store = getStore("user_profile", "readwrite");
+            const request = store.put(profile, "config");
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // Stats / Attempts Operations
+    function saveAttempt(attempt) {
+        return new Promise((resolve, reject) => {
+            const store = getStore("runs_history", "readwrite");
+            const request = store.add({
+                ...attempt,
+                timestamp: Date.now()
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // Unification feature preserved: logs are separated by curriculum
+    function getAttempts(curriculum) {
+        return new Promise((resolve) => {
+            const store = getStore("runs_history", "readonly");
+            const index = store.index("curriculum");
+            const request = index.getAll(curriculum);
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    function getAllAttempts() {
+        return new Promise((resolve) => {
+            const store = getStore("runs_history", "readonly");
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    // Keystroke Analytics Operations
+    function saveKeystrokeDelay(char, delayMs) {
+        if (!char || char.length !== 1) return;
+        const store = getStore("keystroke_analytics", "readwrite");
+        store.add({
+            char: char.toLowerCase(),
+            delayMs: delayMs,
+            timestamp: Date.now()
+        });
+    }
+
+    // Mistakes Bucket Operations
+    function addMistakeWords(wordsArray) {
+        return new Promise((resolve) => {
+            const store = getStore("mistakes_bucket", "readwrite");
+            let completed = 0;
+            if (wordsArray.length === 0) return resolve();
+            wordsArray.forEach(w => {
+                const wordClean = w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "");
+                if (!wordClean) {
+                    completed++;
+                    if (completed === wordsArray.length) resolve();
+                    return;
+                }
+                const request = store.put({ word: wordClean, timestamp: Date.now() });
+                request.onsuccess = request.onerror = () => {
+                    completed++;
+                    if (completed === wordsArray.length) resolve();
+                };
+            });
+        });
+    }
+
+    function getMistakeWords() {
+        return new Promise((resolve) => {
+            const store = getStore("mistakes_bucket", "readonly");
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const list = request.result || [];
+                resolve(list.map(item => item.word));
+            };
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    function removeMistakeWords(wordsArray) {
+        return new Promise((resolve) => {
+            const store = getStore("mistakes_bucket", "readwrite");
+            let completed = 0;
+            if (wordsArray.length === 0) return resolve();
+            wordsArray.forEach(w => {
+                const wordClean = w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "");
+                const request = store.delete(wordClean);
+                request.onsuccess = request.onerror = () => {
+                    completed++;
+                    if (completed === wordsArray.length) resolve();
+                };
+            });
+        });
+    }
+
+    function getKeyLatencies() {
+        return new Promise((resolve) => {
+            const store = getStore("keystroke_analytics", "readonly");
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const data = request.result || [];
+                const keyGroups = {};
+                data.forEach(item => {
+                    if (!keyGroups[item.char]) {
+                        keyGroups[item.char] = { sum: 0, count: 0 };
+                    }
+                    keyGroups[item.char].sum += item.delayMs;
+                    keyGroups[item.char].count += 1;
+                });
+                const latencies = {};
+                for (const char in keyGroups) {
+                    latencies[char] = Math.round(keyGroups[char].sum / keyGroups[char].count);
+                }
+                resolve(latencies);
+            };
+            request.onerror = () => resolve({});
+        });
+    }
+
+    function saveExamAttempt(attempt) {
+        return new Promise((resolve, reject) => {
+            const store = getStore("exams_history", "readwrite");
+            const request = store.add({
+                ...attempt,
+                timestamp: Date.now()
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    function getExamAttempts() {
+        return new Promise((resolve) => {
+            const store = getStore("exams_history", "readonly");
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const results = request.result || [];
+                // Sort by timestamp descending (newest first)
+                results.sort((a, b) => b.timestamp - a.timestamp);
+                resolve(results);
+            };
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    window.StorageDB = {
+        initDB,
+        getUserProfile,
+        saveUserProfile,
+        saveAttempt,
+        getAttempts,
+        getAllAttempts,
+        saveKeystrokeDelay,
+        getKeyLatencies,
+        saveExamAttempt,
+        getExamAttempts,
+        addMistakeWords,
+        getMistakeWords,
+        removeMistakeWords
+    };
+})();

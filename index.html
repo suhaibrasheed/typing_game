@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KashTyper - The Ultimate Keyboard Training Suite</title>
+    
+    <!-- External assets links -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Roboto+Mono:wght@400;500&family=Pacifico&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+    
+    <!-- Local style modules -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/race-track.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/ranks.css">
+    <link rel="stylesheet" href="css/themes.css">
+    
+    <!-- Tailwind custom config to split text and bg colors to resolve hidden stats -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    textColor: {
+                        primary: 'var(--text-primary)',
+                        secondary: 'var(--text-secondary)',
+                    },
+                    backgroundColor: {
+                        primary: 'var(--bg-primary)',
+                        secondary: 'var(--bg-secondary)',
+                        tertiary: 'var(--bg-tertiary)',
+                    },
+                    borderColor: {
+                        primary: 'var(--border-color)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="p-4 sm:p-6 transition-all duration-300">
+
+    <!-- Slim Glassmorphic Header Bar -->
+    <header class="bg-secondary/40 backdrop-blur-xl border-b border-white/5 fixed top-0 left-0 right-0 z-50 px-4 py-1.5 shadow-2xl transition-all duration-300">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <!-- Left Side: Rebranded KashTyper Logo Button -->
+            <div class="flex items-center">
+                <button id="main-title-btn" class="flex items-center gap-1 select-none hover:scale-105 transition duration-300 px-4 py-1 rounded-full bg-secondary/40 border border-white/10 hover:border-[var(--accent-primary)] focus:outline-none shadow-sm">
+                    <span class="text-lg sm:text-xl font-normal font-['Pacifico'] text-[var(--accent-primary)]">Kash</span>
+                    <span class="text-lg sm:text-xl font-normal font-['Pacifico'] text-[var(--accent-secondary)]">Typer</span>
+                </button>
+            </div>
+            
+            <!-- Right Side: Slim Badge & Smaller Settings -->
+            <div class="flex items-center gap-3">
+                <!-- Rank Badge -->
+                <button id="rank-badge" class="relative overflow-hidden px-4 py-1.5 rounded-full font-extrabold text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition hover:scale-105 border border-white/5">
+                    <div id="rank-badge-fill" class="absolute left-0 top-0 bottom-0 transition-all duration-500 ease-out rounded-r-full"></div>
+                    <svg id="rank-badge-icon" xmlns="http://www.w3.org/2000/svg" class="relative z-10 w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path><path d="M12 2a6 6 0 0 1 6 6c0 3.3-3.18 5.66-6 5.66s-6-2.36-6-5.66a6 6 0 0 1 6-6Z"></path></svg>
+                    <span id="rank-badge-name" class="relative z-10">Loading...</span>
+                </button>
+                
+                <!-- Explore Apps -->
+                <button id="apps-btn" class="bg-tertiary text-secondary hover:text-primary p-2 rounded-xl border border-white/5 transition shadow-sm" title="Explore Kash Apps">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </button>
+
+                <!-- Settings Toggle -->
+                <button id="settings-btn" class="bg-tertiary text-secondary hover:text-primary p-2 rounded-xl border border-white/5 transition shadow-sm" title="App Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1-2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="app-container" class="w-full max-w-6xl mx-auto pt-[3.75rem]">
+        
+        <!-- Center Power Quote as a Premium Floating Glassmorphic Pill Tile -->
+        <div class="flex justify-center my-2">
+            <div class="bg-secondary/35 backdrop-blur-xl border border-[var(--border-color)] px-4 py-1.5 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-[var(--accent-primary)] opacity-80" viewBox="0 0 24 24" fill="currentColor"><path d="M11.19 14.75a4.2 4.2 0 0 0-.25-1.42 3.65 3.65 0 0 0-.75-1.17 3.51 3.51 0 0 0-1.16-.76A4.55 4.55 0 0 0 7.6 11H6.5c.27-2.31 1.77-3.9 4.5-4.75V4.75C6.73 5.66 4.7 7.74 4.7 11.5a5.55 5.55 0 0 0 1.61 4 5.37 5.37 0 0 0 3.89 1.5 5.55 5.55 0 0 0 1-.09zM22 11.5a5.55 5.55 0 0 0-1.61-4 5.37 5.37 0 0 0-3.89-1.5 5.55 5.55 0 0 0-1 .09v1.41a4.2 4.2 0 0 0 .25 1.42 3.65 3.65 0 0 0 .75 1.17 3.51 3.51 0 0 0 1.16.76A4.55 4.55 0 0 0 19 11h1.1c-.27 2.31-1.77 3.9-4.5 4.75v1.5C19.73 16.34 21.76 14.26 21.76 10.5V11.5z"/></svg>
+                <span id="power-quote" class="premium-quote-glow">Write Your Story</span>
+            </div>
+        </div>
+
+        <!-- Premium Glassmorphic Tab Navigation Capsule Bar -->
+        <div id="app-nav-container" class="flex justify-center mb-3 mt-1.5 transition duration-300">
+            <div class="bg-secondary/35 backdrop-blur-xl border border-[var(--border-color)] p-1.5 rounded-full shadow-2xl flex items-center gap-1.5">
+                <button id="view-practice-btn" class="px-5 py-2 rounded-full font-extrabold text-xs sm:text-sm transition duration-300 flex items-center gap-1.5 cursor-pointer text-secondary hover:text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                    Practice
+                </button>
+                <button id="view-exam-btn" class="px-5 py-2 rounded-full font-extrabold text-xs sm:text-sm transition duration-300 flex items-center gap-1.5 cursor-pointer text-white border border-white/5 bg-[var(--accent-primary)] shadow-[0_0_12px_rgba(129,140,248,0.25)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"></path></svg>
+                    Exam
+                </button>
+                <button id="view-dashboard-btn" class="px-5 py-2 rounded-full font-extrabold text-xs sm:text-sm transition duration-300 flex items-center gap-1.5 cursor-pointer text-secondary hover:text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    Dashboard
+                </button>
+                <button id="donation-btn" class="px-5 py-2 rounded-full font-extrabold text-xs sm:text-sm transition duration-300 flex items-center gap-1.5 cursor-pointer text-secondary hover:text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    Support Us
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Card Container -->
+        <main id="main-content" class="bg-primary rounded-2xl border border-[var(--border-color)] shadow-2xl p-4 md:p-6 relative overflow-hidden transition-all duration-300">
+            <textarea id="typing-input" class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+
+            <!-- level-selection-view wrapper around menu views -->
+            <div id="level-selection-view" class="space-y-6">
+
+                <!-- A. PRACTICE SELECTION VIEW (VISIBLE BY DEFAULT) -->
+                <div id="practice-view" class="hidden space-y-6">
+                    <!-- Curriculum tabs -->
+                    <div id="curriculum-tabs" class="flex flex-wrap border-b border-white/5 gap-2"></div>
+                    
+                    <!-- Sub-category filters -->
+                    <div id="level-category-tabs" class="flex flex-wrap gap-2 py-1"></div>
+                    
+                    <!-- Levels Grid - Occupies Full Height -->
+                    <div id="level-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+                </div>
+
+                <!-- B. MAIN DASHBOARD VIEW (HIDDEN BY DEFAULT) -->
+                <div id="dashboard-view" class="hidden space-y-6">
+                    <!-- Top Row: Stats Card & Streak Calendar Card -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- KPI Analytics Panel -->
+                        <div class="lg:col-span-2 bg-secondary/35 border border-[var(--border-color)] rounded-2xl p-5 flex flex-col justify-between">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-md font-extrabold text-primary flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[var(--accent-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
+                                    Analytics Overview
+                                </h3>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center my-2">
+                                <div class="bg-primary/40 backdrop-blur-md border border-white/5 rounded-xl p-3 hover:border-[var(--accent-primary)]/20 hover:shadow-[0_0_15px_rgba(129,140,248,0.1)] transition-all duration-300 flex flex-col items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[var(--accent-primary)] mb-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m12 12 4-4"></path></svg>
+                                    <p class="text-[0.62rem] font-bold text-secondary uppercase tracking-wider">Average Speed</p>
+                                    <p class="text-xl font-black text-primary mt-1.5"><span id="dash-avg-wpm">0</span> <span class="text-xs text-secondary font-semibold font-mono">WPM</span></p>
+                                </div>
+                                <div class="bg-primary/40 backdrop-blur-md border border-white/5 rounded-xl p-3 hover:border-amber-400/20 hover:shadow-[0_0_15px_rgba(245,158,11,0.1)] transition-all duration-300 flex flex-col items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400 mb-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path><path d="M12 2a6 6 0 0 1 6 6c0 3.3-3.18 5.66-6 5.66s-6-2.36-6-5.66a6 6 0 0 1 6-6Z"></path></svg>
+                                    <p class="text-[0.62rem] font-bold text-secondary uppercase tracking-wider">Top Speed</p>
+                                    <p class="text-xl font-black text-primary mt-1.5"><span id="dash-top-wpm">0</span> <span class="text-xs text-secondary font-semibold font-mono">WPM</span></p>
+                                </div>
+                                <div class="bg-primary/40 backdrop-blur-md border border-white/5 rounded-xl p-3 hover:border-emerald-400/20 hover:shadow-[0_0_15px_rgba(16,185,129,0.1)] transition-all duration-300 flex flex-col items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-400 mb-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                                    <p class="text-[0.62rem] font-bold text-secondary uppercase tracking-wider">Accuracy</p>
+                                    <p id="dash-avg-accuracy" class="text-xl font-black text-primary mt-1.5">100%</p>
+                                </div>
+                                <div class="bg-primary/40 backdrop-blur-md border border-white/5 rounded-xl p-3 hover:border-[var(--accent-secondary)]/20 hover:shadow-[0_0_15px_rgba(244,63,94,0.1)] transition-all duration-300 flex flex-col items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[var(--accent-secondary)] mb-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    <p class="text-[0.62rem] font-bold text-secondary uppercase tracking-wider">Accumulated XP</p>
+                                    <p id="dash-total-words" class="text-xl font-black text-primary mt-1.5">0</p>
+                                </div>
+                            </div>
+                            <!-- Coaching Tip -->
+                            <div class="mt-4 p-3 bg-primary/35 border border-[var(--border-color)] rounded-xl flex items-start gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .3 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>
+                                <div class="text-xs text-secondary leading-relaxed">
+                                    <p class="font-bold text-primary mb-0.5">Adaptive Typing Coach</p>
+                                    <p id="dash-coach-text">Loading delay metrics...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Streaks & Flame Calendar -->
+                        <div class="bg-secondary/35 border border-[var(--border-color)] rounded-2xl p-5 flex flex-col justify-between">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-md font-extrabold text-primary flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[var(--streak-flame)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+                                    Daily Streaks
+                                </h3>
+                            </div>
+                            <div class="text-center my-2">
+                                <span id="dash-streak-count" class="text-4xl font-black text-[var(--streak-flame)]">0-Day Streak</span>
+                                <p class="text-[0.65rem] text-secondary mt-1">Type every day to lock in your speed growth!</p>
+                            </div>
+                            <!-- 7-Day Mini Calendar Grid -->
+                            <div id="dash-streak-days" class="flex justify-between gap-1 mt-4 p-2 bg-primary/45 border border-[var(--border-color)] rounded-xl"></div>
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Latency Heatmap Layout -->
+                    <div class="bg-secondary/25 border border-[var(--border-color)] rounded-2xl p-4">
+                        <h3 class="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Keystroke Latency Heatmap (Slow Keys in Red)</h3>
+                        <div id="dash-keyboard-heatmap" class="flex items-center justify-center"></div>
+                    </div>
+
+                    <!-- INLINE PERFORMANCE PROGRESS & HISTORY -->
+                    <div class="space-y-6">
+                        <!-- Line Chart Curves -->
+                        <div class="bg-secondary/35 border border-[var(--border-color)] p-5 rounded-2xl">
+                            <h4 class="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Words Per Minute (WPM) Progress Tracker</h4>
+                            <div id="stats-chart-placeholder" class="relative w-full h-64">
+                                <canvas id="stats-wpm-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Attempts History Table -->
+                        <div class="bg-secondary/35 border border-[var(--border-color)] rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 bg-secondary/20 border-b border-[var(--border-color)]">
+                                <h4 class="text-xs font-bold text-primary uppercase tracking-wider">Recent Attempts (Last 15)</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-secondary/40 text-[0.65rem] font-bold text-secondary uppercase border-b border-white/5">
+                                            <th class="px-5 py-3">Date/Time</th>
+                                            <th class="px-5 py-3">Curriculum / Level</th>
+                                            <th class="px-5 py-3 text-right">Speed</th>
+                                            <th class="px-5 py-3 text-right">Accuracy</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stats-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- C. MOCK EXAM VIEW (HIDDEN BY DEFAULT) -->
+                <div id="exam-view" class="space-y-6">
+                    <section class="exam-hub-launch">
+                        <div class="exam-hub-copy">
+                            <span class="exam-hub-eyebrow"><i></i> Government exam simulation</span>
+                            <button id="exam-info-btn" class="exam-info-button" type="button">Tell me more <span>↗</span></button>
+                            <h2><span id="exam-hub-exam-name">JKSSB Junior Assistant</span><br>Typing Simulator</h2>
+                            <p>Train under real test constraints with official-style evaluation, restricted correction and an auditable score out of 20.</p>
+                            <div class="custom-exam-dropdown">
+                                <button id="exam-dropdown-btn" class="exam-dropdown-button" type="button">
+                                    What's ur Exam?
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m7 10 5 5 5-5"/></svg>
+                                </button>
+                                <div id="exam-dropdown-menu" class="exam-dropdown-menu">
+                                    <div class="exam-dropdown-item active" data-value="JKSSB Junior Assistant">JKSSB Junior Assistant</div>
+                                    <div class="exam-dropdown-item" data-value="SSC CGL">SSC CGL</div>
+                                    <div class="exam-dropdown-item" data-value="SSC CHSL">SSC CHSL</div>
+                                    <div class="exam-dropdown-item" data-value="RRB NTPC">RRB NTPC</div>
+                                    <div class="exam-dropdown-item" data-value="High Court Typist">High Court Typist</div>
+                                </div>
+                            </div>
+                            <div class="exam-standard-pills">
+                                <span><strong>35</strong> Net WPM</span>
+                                <span><strong>90%</strong> Accuracy</span>
+                                <span><strong>20</strong> Maximum marks</span>
+                            </div>
+                        </div>
+                        <div class="exam-hub-controls">
+                            <label>Choose test duration</label>
+                            <div class="exam-duration-grid">
+                                <button class="exam-duration-btn" data-duration="180"><strong>03</strong><span>Minutes</span></button>
+                                <button class="exam-duration-btn" data-duration="300"><strong>05</strong><span>Minutes</span></button>
+                                <button class="exam-duration-btn active" data-duration="600"><strong>10</strong><span>Minutes</span></button>
+                                <button class="exam-duration-btn" data-duration="900"><strong>15</strong><span>Minutes</span></button>
+                            </div>
+                            <label class="exam-difficulty-label">Passage difficulty</label>
+                            <div class="exam-difficulty-grid" role="group" aria-label="Passage difficulty">
+                                <button class="exam-difficulty-btn" data-difficulty="easy" type="button"><span>Easy</span></button>
+                                <button class="exam-difficulty-btn active" data-difficulty="medium" type="button"><span>Medium</span></button>
+                                <button class="exam-difficulty-btn" data-difficulty="hard" type="button"><span>Hard</span></button>
+                            </div>
+                            <div class="exam-hub-control-row">
+                                <div class="exam-blind-toggle-wrap">
+                                    <span class="exam-toggle-label">Blind Transcript</span>
+                                    <label class="switch-premium">
+                                        <input type="checkbox" id="blind-transcript-toggle">
+                                        <span class="slider-premium"></span>
+                                    </label>
+                                    <button id="blind-info-btn" class="blind-info-button" type="button" aria-label="Blind transcription info">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button id="start-exam-btn" class="exam-start-button">
+                                Begin Exam
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                            </button>
+                            <p class="exam-control-note"><span>●</span> Timer starts immediately after launch</p>
+                        </div>
+                    </section>
+
+                    <section class="exam-history-panel">
+                        <header class="exam-history-heading">
+                            <div>
+                                <span class="exam-section-kicker">Performance archive</span>
+                                <h3>Previous exam results</h3>
+                                <p>Your recent attempts, graded with government-style full and half mistakes.</p>
+                            </div>
+                            <div class="exam-score-legend" aria-label="Score colour legend">
+                                <span class="fail">Failed</span><span class="tier-grey">5–7.99</span><span class="tier-orange">8–10.99</span><span class="tier-violet">11–12.99</span><span class="tier-blue">13–14.99</span><span class="tier-pink">15–16.99</span><span class="tier-green">17–20</span>
+                            </div>
+                        </header>
+                        <div id="exam-cards-container" class="exam-cards-grid">
+                            <div class="exam-empty-state"><span>⌨</span><strong>No exam attempts yet</strong><p>Your first official-style score card will appear here.</p></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- C. ACTIVE SESSION TYPING GAME SCREEN VIEW (HIDDEN DEFAULT) -->
+            <div id="game-session-view" class="hidden space-y-6">
+                <!-- Track Header bar -->
+                <div class="flex justify-between items-center border-b border-[var(--border-color)] pb-3">
+                    <button id="game-exit-btn" class="btn btn-secondary px-3 py-1.5 text-xs flex items-center gap-1 font-bold">
+                        &larr; Abort Race
+                    </button>
+                    <div class="text-xs text-secondary font-mono tracking-wider flex items-center gap-1.5">
+                        <span>LEVEL RACEWAY</span>
+                        <button id="ghost-info-btn" class="cursor-pointer text-secondary opacity-60 hover:opacity-100 transition duration-200 focus:outline-none flex items-center" aria-label="Racetrack Information">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Racer Track visualizer overlay -->
+                <div id="race-track"></div>
+
+                <!-- Running HUD metrics -->
+                <div id="game-stats" class="grid grid-cols-3 items-center text-center p-3 bg-secondary/50 rounded-xl">
+                    <div>
+                        <div class="text-[0.65rem] font-bold text-secondary uppercase">Speed</div>
+                        <div class="flex items-baseline justify-center gap-0.5 mt-0.5">
+                            <span id="game-wpm" class="text-3xl font-black text-primary transition duration-300">0</span>
+                            <span class="text-xs font-bold text-secondary font-mono">WPM</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar track -->
+                    <div class="px-2">
+                        <div class="progress-track">
+                            <div id="progress-bar" class="progress-bar-fill w-0" style="background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="text-[0.65rem] font-bold text-secondary uppercase">Accuracy</div>
+                        <div id="game-accuracy" class="text-3xl font-black text-primary transition duration-300 mt-0.5">100%</div>
+                    </div>
+                </div>
+
+                <!-- Absolute typing caret character display container -->
+                <div id="text-display-wrapper">
+                    <div id="text-display" class="font-mono text-lg sm:text-xl tracking-wider select-none relative leading-relaxed">
+                        <div id="caret"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== MODALS LAYOUTS ==================== -->
+
+    <!-- A. Settings Modal -->
+    <div id="settings-modal" class="modal-container">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content relative">
+            <button class="modal-close" aria-label="Close modal">&times;</button>
+            <h3 class="text-2xl font-black text-primary mb-6 text-center">App Settings</h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label for="username-input" class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Username</label>
+                    <input type="text" id="username-input" class="w-full bg-secondary border border-[var(--border-color)] text-primary p-2.5 rounded-xl focus:outline-none focus:ring-2 ring-[var(--accent-primary)] font-bold text-sm" maxlength="12">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Avatar Icon</label>
+                    <div id="player-icon-selector" class="grid grid-cols-5 gap-2 bg-secondary p-2.5 rounded-xl border border-[var(--border-color)]"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Keystroke Audio feedback</label>
+                    <div id="sound-selector" class="grid grid-cols-5 gap-2 bg-secondary p-2.5 rounded-xl border border-[var(--border-color)]"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Themes Selection</label>
+                    <div id="theme-selector" class="grid grid-cols-3 gap-2 bg-secondary p-2.5 rounded-xl border border-[var(--border-color)]"></div>
+                </div>
+                <div>
+                    <label for="ai-speed-slider" class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">AI Opponent Speed: <span id="ai-speed-value" class="text-primary font-black">70</span> WPM</label>
+                    <input type="range" id="ai-speed-slider" min="40" max="140" value="70" class="w-full">
+                    <p class="text-[0.65rem] text-secondary mt-1">This sets the default race baseline speed if no previous records exist on the selected level.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B. Results Modal -->
+    <div id="results-modal" class="modal-container">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content relative text-center">
+            <div id="confetti-container"></div>
+            <h2 id="results-title" class="text-3xl font-black text-[var(--accent-secondary)] mb-1">Victory!</h2>
+            <p class="text-sm text-secondary mb-6 font-bold uppercase tracking-widest">Level Complete</p>
+            
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="border-r border-[var(--border-color)]">
+                    <p class="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Speed</p>
+                    <p id="results-wpm" class="stat-large font-black text-primary">0</p>
+                    <span class="text-xs text-secondary font-mono">WPM</span>
+                </div>
+                <div class="border-r border-[var(--border-color)]">
+                    <p class="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Accuracy</p>
+                    <p id="results-accuracy" class="stat-large font-black text-primary">0%</p>
+                    <span class="text-xs text-secondary font-mono">accuracy</span>
+                </div>
+                <div>
+                    <p class="text-secondary text-xs font-bold uppercase tracking-wider mb-1">XP Earned</p>
+                    <p id="results-xp" class="stat-large font-black text-[var(--accent-primary)]">0</p>
+                    <span class="text-xs text-secondary font-mono">points</span>
+                </div>
+            </div>
+            
+            <div class="bg-secondary/50 border border-[var(--border-color)] p-4 rounded-xl mb-8 text-center">
+                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-1.5">Coach Performance Feedback</h4>
+                <p id="results-suggestion" class="text-xs text-secondary leading-relaxed font-medium">Analyzing run...</p>
+            </div>
+            
+            <div id="results-buttons" class="flex flex-col sm:flex-row gap-3 justify-center"></div>
+        </div>
+    </div>
+
+    <!-- C. Rank Modal (Redesigned with Absolute Centered Progress Labels to fix clipping) -->
+    <div id="rank-modal" class="modal-container">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content relative max-w-md">
+            <button class="modal-close" aria-label="Close modal">&times;</button>
+            <h3 class="text-2xl font-black text-center text-primary mb-2">Your Rank</h3>
+            
+            <div class="text-center mb-6">
+                <div id="modal-rank-name" class="text-5xl font-black text-secondary tracking-wide mb-1 transition duration-300">Mr. Zero</div>
+                <div id="modal-total-words" class="text-xs text-secondary font-bold">Total XP: 0</div>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="w-full bg-secondary border border-[var(--border-color)] rounded-full h-10 p-1 overflow-hidden relative flex items-center">
+                    <!-- Dynamic Progress fill bar matching rank button styles -->
+                    <div id="rank-progress-bar" class="h-full rounded-full transition-all duration-500 shadow-md" style="width: 0%;"></div>
+                    <!-- Absolute Centered Progress Label -->
+                    <span id="modal-progress-text" class="absolute inset-0 flex items-center justify-center text-white font-extrabold text-sm mix-blend-difference">0 / 600</span>
+                </div>
+                <div class="flex justify-between text-xs font-bold text-secondary px-2">
+                    <span id="modal-curr-rank-label">Mr. Zero</span>
+                    <span id="modal-next-rank-label">Seed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- D. Abort Confirmation Modal -->
+    <div id="abort-modal" class="modal-container">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content relative text-center max-w-sm">
+            <h3 class="text-2xl font-black text-primary mb-2">Abort Race?</h3>
+            <p class="text-xs text-secondary mb-6 leading-relaxed">Are you sure you want to abort this typing session? Your current progress will be discarded.</p>
+            <div class="flex gap-3 justify-center">
+                <button id="abort-confirm-cancel" class="btn btn-secondary w-full">Resume</button>
+                <button id="abort-confirm-ok" class="btn btn-primary bg-red-500 hover:bg-red-600 text-white w-full">Abort</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- E. Rank Up celebration screen -->
+    <div id="rank-up-modal" class="modal-container flex-col">
+        <div class="modal-backdrop"></div>
+        <div class="rank-up-content relative">
+            <div id="rank-confetti-container"></div>
+            <p id="rank-up-witty-message" class="text-lg font-black uppercase tracking-wider mb-2">Amazing Progress!</p>
+            <p class="text-[0.65rem] text-secondary font-bold uppercase tracking-widest">New Rank Unlocked</p>
+            
+            <div id="new-rank-display">
+                <div id="new-rank-fill" class="absolute inset-0"></div>
+                <span id="new-rank-name" class="relative z-10 font-black">New Rank</span>
+            </div>
+            
+            <p id="rank-up-words-typed" class="text-xs text-secondary font-bold">You've accumulated a total of 0 XP!</p>
+            <button id="rank-up-continue" class="btn btn-primary mt-6 w-full opacity-0" style="animation: fade-in 0.4s ease-out 1s forwards">
+                Continue Journey
+            </button>
+        </div>
+    </div>
+
+    <!-- F. Explore Apps Modal -->
+    <div id="apps-modal" class="modal-container">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content relative text-center max-w-sm">
+            <button class="modal-close">&times;</button>
+            <h3 class="text-xl font-extrabold text-primary mb-2 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[var(--accent-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Explore Kash Suite
+            </h3>
+            <p class="text-xs text-secondary mb-6 font-medium">Boost your productivity and learning with our ecosystem.</p>
+            
+            <div class="flex flex-col gap-3">
+                <!-- NoteKash -->
+                <a href="https://notekash.com" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 p-4 rounded-2xl bg-secondary/35 border border-white/5 hover:border-[var(--accent-primary)] hover:shadow-lg transition-all duration-300 group text-left">
+                    <div class="p-2.5 rounded-xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-primary group-hover:text-[var(--accent-primary)] transition text-sm">NoteKash</h4>
+                        <p class="text-xs text-secondary mt-0.5 font-medium">Premium note taking app to turn your notes into knowledge</p>
+                    </div>
+                </a>
+                
+                <!-- MCQ Kash -->
+                <a href="https://civilskash.in/mcq" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 p-4 rounded-2xl bg-secondary/35 border border-white/5 hover:border-[var(--accent-secondary)] hover:shadow-lg transition-all duration-300 group text-left">
+                    <div class="p-2.5 rounded-xl bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-primary group-hover:text-[var(--accent-secondary)] transition text-sm">MCQ Kash</h4>
+                        <p class="text-xs text-secondary mt-0.5 font-medium">India's best MCQ App with Battles and SRS Algorithm</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full-screen JKSSB examination console -->
+    <section id="exam-console" class="exam-console hidden" aria-hidden="true">
+        <header class="exam-console-header">
+            <div>
+                <p id="exam-console-exam-name" class="exam-kicker">JKSSB Junior Assistant</p>
+                <h1>Real Exam Simulation</h1>
+            </div>
+            <div class="exam-candidate-grid">
+                <span>Name <strong id="exam-candidate-name">SUBI</strong></span>
+                <span>Roll No. <strong>MOCK-2026-9041</strong></span>
+                <span>System <strong>C001</strong></span>
+            </div>
+            <div class="exam-timer-box">
+                <small>TIME REMAINING</small>
+                <strong id="exam-timer">10:00</strong>
+            </div>
+        </header>
+        <main class="exam-console-body">
+            <div class="exam-instructions">
+                Type the passage exactly as shown. Backspace works only within the current word. The test submits automatically when time expires.
+            </div>
+            <section class="exam-field-group exam-source-group">
+                <div class="exam-field-heading"><span>Source Passage</span><strong id="exam-passage-title">Administrative Reforms</strong></div>
+                <div id="exam-source-passage" class="exam-source-passage" tabindex="0"></div>
+            </section>
+            <section class="exam-field-group exam-response-group">
+                <div class="exam-field-heading"><span>Candidate Response</span><strong id="exam-word-count">0 words</strong></div>
+                <textarea id="exam-response" class="exam-response" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" aria-label="Candidate response"></textarea>
+            </section>
+        </main>
+        <footer class="exam-console-footer">
+            <span id="exam-progress-note">Test in progress — do not refresh this page</span>
+            <div>
+                <button id="exam-reset-btn" class="exam-action secondary" type="button">Reset Response</button>
+                <button id="exam-cancel-btn" class="exam-action danger" type="button">Cancel Test</button>
+                <button id="exam-submit-btn" class="exam-action primary" type="button">Submit Test</button>
+            </div>
+        </footer>
+        <div id="exam-result-overlay" class="exam-result-overlay hidden" role="dialog" aria-modal="true">
+            <article class="exam-result-card">
+                <p class="exam-kicker">Official Score Card · <span id="exam-result-exam-name">JKSSB Junior Assistant</span></p>
+                <h2 id="exam-result-status">QUALIFIED</h2>
+                <div class="exam-result-marks"><strong id="exam-result-marks">0.00</strong><span id="exam-result-marks-max">/ 20</span></div>
+                <div class="exam-result-metrics">
+                    <span><small>Net Speed</small><strong id="exam-result-wpm">0 WPM</strong></span>
+                    <span><small>Accuracy</small><strong id="exam-result-accuracy">0%</strong></span>
+                    <span><small>Duration</small><strong id="exam-result-duration">0:00</strong></span>
+                </div>
+                <p id="exam-result-errors" class="exam-result-errors">Gross speed: 0 WPM · Full mistakes: 0 · Half mistakes: 0</p>
+                <p id="exam-result-message"></p>
+                <button id="exam-result-close" class="exam-action primary" type="button">Return to Exam Home</button>
+            </article>
+        </div>
+        <div id="exam-confirm-overlay" class="exam-confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="exam-confirm-title">
+            <article class="exam-confirm-card">
+                <div class="exam-confirm-icon">!</div>
+                <div>
+                    <p class="exam-kicker">Confirm action</p>
+                    <h2 id="exam-confirm-title">Cancel this test?</h2>
+                    <p id="exam-confirm-message">Your current response will be discarded and this attempt will not be saved.</p>
+                </div>
+                <div class="exam-confirm-actions">
+                    <button id="exam-confirm-stay" class="exam-action secondary" type="button">Stay in test</button>
+                    <button id="exam-confirm-proceed" class="exam-action danger" type="button">Cancel test</button>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- Local JS data & modules loaded sequentially to support double-click file:// protocol -->
+    <script src="js/data/protyper-levels.js"></script>
+    <script src="js/data/upsc-levels.js"></script>
+    <script src="js/data/jkssb-levels.js"></script>
+    <script src="js/data/passage_easy.js"></script>
+    <script src="js/data/passage_medium.js"></script>
+    <script src="js/data/passage_hard.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/game/competitor.js"></script>
+    <script src="js/game/engine.js"></script>
+    <script src="js/game/exam-engine.js"></script>
+    <script src="js/ui/dashboard.js"></script>
+    <script src="js/ui/level-selector.js"></script>
+    <script src="js/ui/game-screen.js"></script>
+    <script src="js/ui/stats-view.js"></script>
+    <script src="js/ui/modals.js"></script>
+    <!-- Donation Modal Overlay -->
+    <div id="donation-overlay" class="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center z-[9999] opacity-0 pointer-events-none transition-opacity duration-300">
+        <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none"></canvas>
+        <div class="bg-secondary/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl text-center shadow-2xl scale-95 transition-transform duration-300 max-w-sm mx-4 relative z-10">
+            <span class="text-5xl block mb-4 animate-bounce">❤️</span>
+            <h2 class="text-2xl font-extrabold text-primary mb-2">Thank You!</h2>
+            <p class="text-sm text-secondary">Your support keeps us running. Redirecting you to checkout...</p>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

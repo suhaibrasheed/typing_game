@@ -1,0 +1,194 @@
+/* Ranks & Progression Styling */
+
+/* Common Badge Styling */
+#rank-badge {
+    position: relative;
+    border-radius: 9999px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    padding: 0.5rem 1.25rem;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+#rank-badge:hover {
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Ranks Dashboard Styling */
+.current-rank-name-modal {
+    font-size: 2.75rem;
+    font-weight: 900;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    margin-bottom: 0.5rem;
+}
+
+#rank-name {
+    font-size: 3.5rem;
+    font-weight: 900;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.5s ease;
+}
+
+/* 9 Rank Tiers Specifications (Removed !important from backgrounds to support dynamic JS color mappings) */
+
+/* Tier 1: Seedling (Green/Earth) */
+.tier-seedling {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Tier 2: Metallurgy (Polished Metals & Chrome sweeps) */
+.tier-metallurgy {
+    box-shadow: 0 0 10px rgba(120, 113, 108, 0.4) !important;
+}
+.tier-metallurgy.silver-glow {
+    box-shadow: 0 0 10px rgba(203, 213, 225, 0.5) !important;
+}
+.tier-metallurgy.gold-glow {
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.6) !important;
+}
+
+/* Tier 3: Gemstones (Jewel glassmorphism) */
+.tier-gemstones {
+    box-shadow: 0 0 15px rgba(236, 72, 153, 0.5) !important;
+}
+.tier-gemstones.emerald-glow {
+    box-shadow: 0 0 15px rgba(52, 211, 153, 0.5) !important;
+}
+.tier-gemstones.sapphire-glow {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Tier 4: Combatants (Warrior Red / Cyber neon borders) */
+.tier-combatants {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6) !important;
+    animation: war-pulse 2s infinite alternate;
+}
+@keyframes war-pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.02); box-shadow: 0 0 20px rgba(239, 68, 68, 0.8) !important; }
+}
+
+/* Tier 5: Speedsters (Motion trails / Supersonic cyan) */
+.tier-speedsters {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.6) !important;
+    animation: supersonic 1s infinite linear;
+}
+@keyframes supersonic {
+    0%, 100% { box-shadow: 0 0 12px rgba(6, 182, 212, 0.5) !important; }
+    50% { box-shadow: 0 0 24px rgba(6, 182, 212, 0.8) !important; }
+}
+
+/* Tier 6: Celestial (Energy pads / Radial ripples) */
+.tier-celestial {
+    box-shadow: 0 0 20px rgba(217, 70, 239, 0.7) !important;
+}
+
+/* Tier 7: Cosmic (Twinkling space particle gradients) */
+.tier-cosmic {
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.7) !important;
+}
+
+/* Tier 8: Legends (Golden Halos & rays) */
+.tier-legends {
+    box-shadow: 0 0 30px rgba(250, 204, 21, 0.8) !important;
+    border: 2px solid rgba(255, 255, 255, 0.8) !important;
+    animation: gold-shine 4s infinite ease-in-out;
+}
+@keyframes gold-shine {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.15); box-shadow: 0 0 35px rgba(250, 204, 21, 1.0) !important; }
+}
+
+/* Tier 9: Eternals (Cosmic gravity loops & neon spectrum flow) */
+.tier-eternals {
+    background-size: 300% 300% !important;
+    box-shadow: 0 0 35px rgba(127, 0, 255, 0.9) !important;
+    border: 2px solid #fff !important;
+    animation: eternal-flow 4s infinite linear;
+}
+@keyframes eternal-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Rank Up Celeb Modal styles */
+#rank-up-modal {
+    z-index: 200;
+}
+
+.rank-up-content {
+    background-color: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    padding: 3rem;
+    border-radius: 2rem;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    z-index: 202;
+    animation: rank-up-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes rank-up-pop {
+    0% { transform: scale(0.6) translateY(30px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+#new-rank-display {
+    font-size: 3.5rem;
+    font-weight: 900;
+    padding: 1.5rem 2.5rem;
+    border-radius: 1.25rem;
+    color: white;
+    margin: 1.5rem 0;
+    position: relative;
+    overflow: hidden;
+    border: 3px solid white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    box-shadow: 0 0 25px rgba(255,255,255,0.4), inset 0 0 10px rgba(255,255,255,0.2);
+}
+
+.rank-modal-confetti {
+    position: absolute;
+    width: 8px;
+    height: 16px;
+    opacity: 0;
+    animation: rank-confetti-anim 3.5s ease-out forwards;
+}
+
+@keyframes rank-confetti-anim {
+    0% { transform: translateY(100%) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-220%) rotate(1080deg); opacity: 0; }
+}
+
+/* Responsive adjustments for mobile viewports */
+@media (max-width: 520px) {
+    #rank-badge-name {
+        display: none; /* Hide badge text on mobile to prevent header item collision */
+    }
+    #rank-badge {
+        padding: 0.5rem !important; /* Make badge circular/compact icon button */
+        justify-content: center;
+        width: 2.2rem;
+        height: 2.2rem;
+    }
+    #rank-badge svg {
+        margin: 0 !important;
+        width: 1.1rem;
+        height: 1.1rem;
+    }
+}

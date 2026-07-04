@@ -1,0 +1,131 @@
+/* Race Track Styling */
+#race-track {
+    position: relative;
+    width: 100%;
+    height: 7rem;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    overflow: hidden;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Laneways styling */
+.lane-splitter {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--border-color) 0px, var(--border-color) 15px, transparent 15px, transparent 30px);
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.6;
+}
+
+/* Finish line */
+.finish-line {
+    position: absolute;
+    right: 32px;
+    top: 0;
+    width: 12px;
+    height: 100%;
+    background: repeating-linear-gradient(45deg, #000 0px, #000 4px, #fff 4px, #fff 8px);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+/* Racer Icons */
+.player-icon {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.5rem;
+    z-index: 10;
+    transition: left 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+    transform: translateY(-50%);
+}
+
+.player-icon .avatar {
+    font-size: 2.25rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    animation: engine-vibrate 0.15s infinite linear;
+}
+
+.player-icon.ai-competitor .avatar {
+    animation: engine-vibrate 0.2s infinite linear;
+}
+
+.player-icon .nametag {
+    background-color: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(1px);
+}
+
+/* Engine Vibration Animation */
+@keyframes engine-vibrate {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1px); }
+}
+
+/* Speed trail effect for racers */
+.speed-trail {
+    position: absolute;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary));
+    border-radius: 2px;
+    opacity: 0.4;
+    transition: width 0.25s ease-out;
+}
+
+/* Responsive adjustments for mobile viewports */
+@media (max-width: 640px) {
+    #race-track {
+        height: 5.5rem; /* Reduce height on mobile to save vertical space */
+    }
+    .player-icon .nametag {
+        font-size: 0.55rem !important; /* Make nametag text small */
+        padding: 0.1rem 0.25rem !important; /* Tighten padding */
+        margin-left: 0.2rem !important;
+    }
+    .player-icon {
+        height: 2rem;
+    }
+    .player-icon .avatar svg {
+        width: 1.75rem !important; /* scale down avatar icons slightly */
+        height: 1.75rem !important;
+    }
+}
+
+/* Adjust racetrack height for viewports with lesser vertical height */
+@media (max-height: 720px) {
+    #race-track {
+        height: 5.2rem !important; /* Shrink racetrack height on short screens */
+    }
+    .player-icon {
+        height: 1.8rem;
+    }
+    .player-icon .avatar svg {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+    }
+}
+@media (max-height: 580px) {
+    #race-track {
+        height: 4.2rem !important; /* Even smaller on ultra-short screens */
+    }
+    .player-icon {
+        height: 1.5rem;
+    }
+    .player-icon .avatar svg {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+    }
+}

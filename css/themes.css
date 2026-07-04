@@ -1,0 +1,71 @@
+/* Theme Styling Definitions: 3 Premium Themes (Dark, Sepia, Ocean) */
+
+:root {
+    /* DEFAULT Theme: Amber Dark (Premium Civilskash Aesthetics) */
+    --bg-primary: #181512;
+    --bg-secondary: #0d0b0a;
+    --bg-tertiary: #26211e;
+    --text-primary: #f5f5f4;
+    --text-secondary: #a8a29e;
+    --text-inverted: #0d0b0a;
+    --accent-primary: #f59e0b;
+    --accent-secondary: #fbbf24;
+    --correct-color: #10b981;
+    --incorrect-color: #f43f5e;
+    --border-color: #332a24;
+    --chart-text-color: #a8a29e;
+    --streak-flame: #f97316;
+}
+
+body.theme-sepia {
+    /* Premium Sepia Theme (Warm Vintage Paper Aesthetics) */
+    --bg-primary: #fdfbf7;
+    --bg-secondary: #f5efe0;
+    --bg-tertiary: #eaddc3;
+    --text-primary: #3e2723;
+    --text-secondary: #795548;
+    --text-inverted: #fdfbf7;
+    --accent-primary: #d84315;
+    --accent-secondary: #ffab40;
+    --correct-color: #2e7d32;
+    --incorrect-color: #c62828;
+    --border-color: #e6d6b8;
+    --chart-text-color: #795548;
+    --streak-flame: #d84315;
+}
+
+body.theme-ocean {
+    /* Premium Ocean Theme (Cyber Deep Sea Teal & Cyan Aesthetics) */
+    --bg-primary: #021526;
+    --bg-secondary: #010a12;
+    --bg-tertiary: #032840;
+    --text-primary: #e0f2fe;
+    --text-secondary: #38bdf8;
+    --text-inverted: #010a12;
+    --accent-primary: #00d2ff;
+    --accent-secondary: #00f5d4;
+    --correct-color: #10b981;
+    --incorrect-color: #f43f5e;
+    --border-color: #043a5c;
+    --chart-text-color: #38bdf8;
+    --streak-flame: #f59e0b;
+}
+
+/* Custom Asset & Component Theme Harmonizers */
+body.theme-sepia #rank-badge {
+    box-shadow: 0 4px 12px rgba(176, 113, 58, 0.18);
+    border: 1px solid rgba(124, 81, 44, 0.15);
+    filter: sepia(0.35) saturate(0.9) contrast(1.05);
+}
+body.theme-sepia .player-icon svg {
+    filter: sepia(0.55) saturate(0.85);
+}
+
+body.theme-ocean #rank-badge {
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.18);
+    border: 1px solid rgba(3, 7, 18, 0.15);
+    filter: hue-rotate(12deg) saturate(1.05);
+}
+body.theme-ocean .player-icon svg {
+    filter: hue-rotate(15deg) saturate(1.1);
+}
