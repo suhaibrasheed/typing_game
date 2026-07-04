@@ -108,9 +108,9 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                     Dashboard
                 </button>
-                <button id="donation-btn" class="px-5 py-2 rounded-full font-extrabold text-xs sm:text-sm transition duration-300 flex items-center gap-1.5 cursor-pointer text-secondary hover:text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                    Support Us
+                <button id="donation-btn" class="px-5 py-2 rounded-full font-extrabold text-xs sm:text-sm transition duration-300 flex items-center gap-1.5 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    Help Me
                 </button>
             </div>
         </div>
@@ -617,13 +617,23 @@
     <script src="js/ui/game-screen.js"></script>
     <script src="js/ui/stats-view.js"></script>
     <script src="js/ui/modals.js"></script>
-    <!-- Donation Modal Overlay -->
-    <div id="donation-overlay" class="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center z-[9999] opacity-0 pointer-events-none transition-opacity duration-300">
+    <div id="donation-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[9999] opacity-0 pointer-events-none transition-opacity duration-300">
         <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none"></canvas>
-        <div class="bg-secondary/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl text-center shadow-2xl scale-95 transition-transform duration-300 max-w-sm mx-4 relative z-10">
-            <span class="text-5xl block mb-4 animate-bounce">❤️</span>
-            <h2 class="text-2xl font-extrabold text-primary mb-2">Thank You!</h2>
-            <p class="text-sm text-secondary">Your support keeps us running. Redirecting you to checkout...</p>
+        <div class="bg-secondary/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl text-center shadow-2xl scale-95 transition-transform duration-300 max-w-md mx-4 relative z-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-pink-500/10 text-pink-500 mb-4 animate-pulse">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h2 class="text-2xl font-extrabold text-primary mb-3">Thank you for believing in CivilsKash.</h2>
+            <p class="text-sm text-secondary leading-relaxed mb-6">
+                Every contribution helps us build better tools, improve learning, and create more value for aspirants. Today's support becomes tomorrow's features. Thank you for helping build what's next.
+            </p>
+            <div class="inline-flex items-center justify-center gap-2.5 text-xs text-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10 py-2.5 px-5 rounded-2xl font-bold">
+                <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Opening support page in a few seconds...</span>
+            </div>
         </div>
     </div>
 

@@ -383,11 +383,11 @@
 
                 updateParticles();
 
-                // Redirect after 1.8 seconds
+                // Redirect after 8 seconds
                 setTimeout(() => {
                     cancelAnimationFrame(animationId);
                     window.location.href = "https://rzp.io/rzp/civilskashsupport";
-                }, 1800);
+                }, 8000);
             });
         }
 
@@ -408,6 +408,9 @@
                 appState.profile = updatedProfile;
                 await StorageDB.saveUserProfile(appState.profile);
                 updateRanksProgressBadge();
+                if (window.ExamEngine && window.ExamEngine.updateProfile) {
+                    window.ExamEngine.updateProfile(updatedProfile);
+                }
             });
             ModalsUI.showModal('settings-modal');
         });

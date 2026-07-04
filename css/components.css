@@ -820,6 +820,45 @@ input[type=range]::-webkit-slider-thumb {
     display: none; /* Chrome, Safari, Opera */
 }
 
+/* Help Me (Donation) Button Styles */
+#donation-btn {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(244, 63, 94, 0.08) 100%);
+    border: 1px solid rgba(236, 72, 153, 0.35);
+    color: #f472b6 !important;
+    transition: all 0.3s ease;
+}
+
+#donation-btn:hover {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.18) 0%, rgba(244, 63, 94, 0.18) 100%);
+    border-color: rgba(236, 72, 153, 0.6);
+    box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);
+}
+
+#donation-btn svg {
+    color: #f472b6;
+    animation: heartTinkering 2.5s infinite ease-in-out;
+}
+
+@keyframes heartTinkering {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.2); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.15); }
+    60% { transform: scale(1); }
+}
+
+/* Exam candidate name placeholder setting */
+#exam-candidate-name.placeholder-name {
+    color: var(--accent-secondary, #f59e0b) !important;
+    cursor: pointer;
+    text-decoration: underline dashed;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+}
+#exam-candidate-name.placeholder-name:hover {
+    color: var(--accent-primary, #3b82f6) !important;
+}
+
 
 
 

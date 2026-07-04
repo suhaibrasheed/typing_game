@@ -55,7 +55,25 @@
         if (userProfile.lastExamName) selectedExam = userProfile.lastExamName;
 
         const profileName = options.profile && options.profile.username;
-        if (profileName && profileName !== 'You') $('exam-candidate-name').textContent = profileName.toUpperCase();
+        const candidateNameEl = $('exam-candidate-name');
+        if (candidateNameEl) {
+            if (profileName && profileName !== 'You') {
+                candidateNameEl.textContent = profileName.toUpperCase();
+                candidateNameEl.classList.remove('placeholder-name');
+            } else {
+                candidateNameEl.textContent = 'Set Name';
+                candidateNameEl.classList.add('placeholder-name');
+            }
+            if (!candidateNameEl.dataset.listenerBound) {
+                candidateNameEl.addEventListener('click', () => {
+                    if (candidateNameEl.textContent === 'Set Name') {
+                        const settingsBtn = document.getElementById('settings-btn');
+                        if (settingsBtn) settingsBtn.click();
+                    }
+                });
+                candidateNameEl.dataset.listenerBound = 'true';
+            }
+        }
 
         // Bind and activate initial state buttons
         document.querySelectorAll('.exam-duration-btn').forEach(btn => {
@@ -557,5 +575,19 @@
         }).join('');
     }
     function escapeHTML(value) { const node = document.createElement('span'); node.textContent = String(value); return node.innerHTML; }
-    window.ExamEngine = { init, renderHistory, calculate, evaluateText };
+    function updateProfile(profile) {
+        userProfile = profile;
+        const profileName = profile && profile.username;
+        const candidateNameEl = $('exam-candidate-name');
+        if (candidateNameEl) {
+            if (profileName && profileName !== 'You') {
+                candidateNameEl.textContent = profileName.toUpperCase();
+                candidateNameEl.classList.remove('placeholder-name');
+            } else {
+                candidateNameEl.textContent = 'Set Name';
+                candidateNameEl.classList.add('placeholder-name');
+            }
+        }
+    }
+    window.ExamEngine = { init, renderHistory, calculate, evaluateText, updateProfile };
 })();
