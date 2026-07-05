@@ -71,6 +71,15 @@
     async function syncDataAndDrawUI() {
         appState.attempts = await StorageDB.getAllAttempts();
         
+        // Calculate average WPM from history
+        const validAttemptsForAvg = appState.attempts.filter(r => r.wpm > 0);
+        const averageWpm = validAttemptsForAvg.length > 0
+            ? Math.round(validAttemptsForAvg.reduce((sum, r) => sum + r.wpm, 0) / validAttemptsForAvg.length)
+            : 40;
+        if (appState.profile) {
+            appState.profile.averageWpm = averageWpm;
+        }
+
         // Structure stats grouping: e.g. { protyper_12: [...], upsc_1: [...] }
         appState.runsStats = {};
         appState.attempts.forEach(run => {
@@ -642,6 +651,9 @@
             await StorageDB.saveUserProfile(appState.profile);
             await syncDataAndDrawUI();
 
+            const competitorState = CompetitorAI.getCompetitorState();
+            const username = appState.profile.username || 'You';
+
             if (newRankName !== oldRankName) {
                 // Trigger celebratory screen instead of results modal directly
                 ModalsUI.triggerRankUpCelebration(
@@ -649,16 +661,18 @@
                     newRankName, 
                     appState.profile.totalWordsTyped, 
                     () => {
-                        ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, handleRetry, handleNext, handleMenu);
+                        ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu);
                     }
                 );
             } else {
-                ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, handleRetry, handleNext, handleMenu);
+                ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu);
             }
         } catch (error) {
             console.error("Resilient recovery: error in game completion stats save:", error);
             // Always display the results modal to the user even if DB or rank checks fail
-            ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, handleRetry, handleNext, handleMenu);
+            const competitorState = CompetitorAI.getCompetitorState();
+            const username = (appState.profile && appState.profile.username) || 'You';
+            ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu);
         }
     });
 })();

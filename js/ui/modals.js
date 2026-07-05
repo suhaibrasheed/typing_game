@@ -129,18 +129,32 @@ function renderSettingsModal(profile, onSaveCallback) {
 }
 
 // 2. Results Modal UI
-function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseWords, onRetry, onNext, onMenu) {
+function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseWords, competitorState, username, onRetry, onNext, onMenu) {
     const title = document.getElementById('results-title');
     const wpmVal = document.getElementById('results-wpm');
     const accVal = document.getElementById('results-accuracy');
     const xpVal = document.getElementById('results-xp');
     const suggestion = document.getElementById('results-suggestion');
     const buttons = document.getElementById('results-buttons');
+    const outcomeComment = document.getElementById('results-outcome-comment');
 
-    if (title) title.textContent = won ? 'Victory!' : 'So Close!';
+    if (title) title.textContent = won ? 'Victory!' : 'Defeat!';
     if (wpmVal) wpmVal.textContent = wpm;
     if (accVal) accVal.textContent = `${accuracy}%`;
     if (xpVal) xpVal.textContent = `+${xpEarned}`;
+
+    if (outcomeComment && competitorState) {
+        const opponentName = competitorState.name || 'Opponent';
+        const opponentWpm = Math.round(competitorState.wpm);
+        const wpmDiff = Math.abs(wpm - opponentWpm);
+        if (accuracy < 90) {
+            outcomeComment.innerHTML = `💀 <strong>Defeated due to low accuracy (${accuracy}%).</strong> Shortcuts don't win rewards, persistence does!`;
+        } else if (won) {
+            outcomeComment.innerHTML = `🏆 <strong>${username}</strong> defeated <strong>${opponentName}</strong> by being <strong>${wpmDiff} WPM</strong> faster!`;
+        } else {
+            outcomeComment.innerHTML = `💀 <strong>${opponentName}</strong> defeated <strong>${username}</strong> by being <strong>${wpmDiff} WPM</strong> faster!`;
+        }
+    }
 
     // Calculate smart feedback metrics dynamically based on the performance-weighted XP formula
     const currentXp = xpEarned;
@@ -196,7 +210,7 @@ function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseW
         };
     }
 
-    if (won && accuracy >= 95) {
+    if (won) {
         triggerConfetti('confetti-container');
     }
 

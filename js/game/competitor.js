@@ -21,18 +21,20 @@
         android: `<svg class="w-8 h-8 text-[var(--accent-secondary)] drop-shadow-[0_0_8px_var(--accent-secondary)]" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6c0-3.87 3.13-7 7-7s7 3.13 7 7Zm-5-8.82A4.015 4.015 0 0 0 12 3a4.015 4.015 0 0 0-2 1.18V3a1 1 0 0 0-2 0v2.6c0 1.2.4 2.3 1.1 3.2C9.5 9.3 10.7 10 12 10s2.5-.7 3.9-2.2c.7-.9 1.1-2 1.1-3.2V3a1 1 0 0 0-2 0v1.18Z"/></svg>`
     };
 
-    // 10 AI Opponents with detailed features, strengths, and speed personalities
+    // 12 unique AI Opponents with different speed tiers: 4 slower, 5 average, 2 faster, 1 always-winning demon
     const AI_OPPONENTS = [
-        { name: "Slowy", type: "snail", speedOffset: -12, icon: RACER_ICONS.snail, desc: "A slow, deliberate snail. Never pauses, types at a calm, rhythmic speed." },
-        { name: "Hoppy", type: "rabbit", speedOffset: 2, icon: RACER_ICONS.rabbit, desc: "A bouncy rabbit. Fast speed bursts but pauses occasionally to rest." },
-        { name: "Chloe", type: "professor", speedOffset: 1, icon: RACER_ICONS.professor, desc: "An academic typewriter. Consistent pace with zero mistakes." },
-        { name: "Shelly", type: "snail", speedOffset: -8, icon: RACER_ICONS.snail, desc: "A steady, armored snail. Slow pace, completely linear progress." },
-        { name: "Buster", type: "rabbit", speedOffset: 5, icon: RACER_ICONS.rabbit, desc: "A energetic hare. Highly aggressive sprints, challenging to beat." },
-        { name: "Sophia", type: "professor", speedOffset: 3, icon: RACER_ICONS.professor, desc: "A precise educator. Extremely steady mid-to-high velocity." },
-        { name: "Byte", type: "android", speedOffset: 7, icon: RACER_ICONS.android, desc: "A processing droid. Highly consistent, mechanical, fast movements." },
-        { name: "Dash", type: "rabbit", speedOffset: 9, icon: RACER_ICONS.rabbit, desc: "A hyper-active bunny. Extreme bursts of speed, pauses rarely." },
-        { name: "Vector", type: "android", speedOffset: 12, icon: RACER_ICONS.android, desc: "A military-grade cyborg. Flawless pacing, expert speed tiers." },
-        { name: "Nova", type: "android", speedOffset: 18, icon: RACER_ICONS.android, desc: "The typing singularity. Blazing fast mechanical speed." }
+        { name: "Totla Tiger 🐯", type: "snail", speedType: "slower", speedOffset: -18, icon: RACER_ICONS.snail, desc: "A stuttering tiger. Very slow pace." },
+        { name: "Lazy Lakhan 😴", type: "snail", speedType: "slower", speedOffset: -12, icon: RACER_ICONS.snail, desc: "A very sleepy racer. Linear but slow progress." },
+        { name: "Potato Pandey 🥔", type: "android", speedType: "slower", speedOffset: -8, icon: RACER_ICONS.android, desc: "A slow, mechanical typewriter droid." },
+        { name: "Chubby Chauhan 🐼", type: "rabbit", speedType: "slower", speedOffset: -5, icon: RACER_ICONS.rabbit, desc: "A chubby bunny who takes frequent pauses." },
+        { name: "Chai Chacha ☕", type: "rabbit", speedType: "average", speedOffset: -2, icon: RACER_ICONS.rabbit, desc: "Takes tea breaks but has decent bursts." },
+        { name: "Munna Master 🎓", type: "professor", speedType: "average", speedOffset: 0, icon: RACER_ICONS.professor, desc: "Extremely consistent academic pace." },
+        { name: "Jugaadu Javed 🔧", type: "professor", speedType: "average", speedOffset: 2, icon: RACER_ICONS.professor, desc: "Finds clever shortcuts to keep a steady rhythm." },
+        { name: "Pakoda Pandit 🥟", type: "professor", speedType: "average", speedOffset: 5, icon: RACER_ICONS.professor, desc: "Rhythmic key clicks, motivated by snacks." },
+        { name: "Nitin Gadbadi 🤪", type: "android", speedType: "average", speedOffset: 8, icon: RACER_ICONS.android, desc: "Highly chaotic pacing, but surprisingly fast." },
+        { name: "Legend Lallu 👑", type: "android", speedType: "faster", speedOffset: 12, icon: RACER_ICONS.android, desc: "A high-performance typist machine." },
+        { name: "Chatur Chintu ⚡", type: "rabbit", speedType: "faster", speedOffset: 18, icon: RACER_ICONS.rabbit, desc: "A smart sprint specialist." },
+        { name: "Gappu Genius 😈", type: "android", speedType: "demon", speedOffset: 35, icon: RACER_ICONS.android, desc: "The ultimate typing wizard. Always wins, zipping across!" }
     ];
 
     function setupCompetitor(profileSettings, bestWpm = 0, textLength) {
@@ -51,19 +53,20 @@
             `;
         }
 
-        const playerRank = profileSettings.currentRank || 'Mr. Zero';
-        const isLegend = ['Legend', 'Myth', 'Epic', 'Titan', 'Divine', 'Ultimate', 'Supreme', 'Immortal', 'Eternal'].includes(playerRank);
+        const avgWpm = profileSettings.averageWpm || 40;
+        const settingsWpm = profileSettings.aiWpm || 40;
+        // User's benchmark capability is the average of their historical average WPM and the WPM set in settings
+        const userBenchmarkWpm = Math.round((avgWpm + settingsWpm) / 2);
 
-        const baselineWpm = bestWpm > 0 ? bestWpm : profileSettings.aiWpm;
-
-        // Select from first 6 for normal players, or allow all 10 for advanced ranks
-        const poolLimit = isLegend ? 10 : 7;
-        const opponent = AI_OPPONENTS[Math.floor(Math.random() * poolLimit)];
+        // Select randomly from all 12 unique opponents
+        const opponent = AI_OPPONENTS[Math.floor(Math.random() * AI_OPPONENTS.length)];
 
         competitorState.name = opponent.name;
         competitorState.type = opponent.type;
+        competitorState.speedType = opponent.speedType;
         competitorState.avatarHtml = opponent.icon;
-        competitorState.wpm = Math.max(25, Math.min(150, baselineWpm + opponent.speedOffset));
+        competitorState.wpm = Math.max(25, Math.min(180, userBenchmarkWpm + opponent.speedOffset));
+        competitorState.finishTime = null;
         competitorState.progress = 0;
         competitorState.isTyping = true;
         competitorState.rabbitPauseTimer = 0;
@@ -130,15 +133,30 @@
         }
 
         if (competitorState.isTyping) {
-            const charsPerSecond = (competitorState.wpm * 5) / 60;
-            const totalCharsTypedByAI = charsPerSecond * elapsedSeconds;
-            progressPercent = (totalCharsTypedByAI / textLength) * 100;
+            if (competitorState.speedType === 'demon') {
+                // Demon racer zips across and always wins.
+                // We track correct chars typed by user and ensure Demon's progress scales to reach 100% when user is at 80%.
+                const correctSpans = document.querySelectorAll('#text-display span.correct').length;
+                const userProgress = textLength > 0 ? (correctSpans / textLength) * 100 : 0;
+                
+                // Let progress speed be faster or based on user's current progress.
+                const baselineProgress = (userProgress / 80) * 100;
+                const timeProgress = (elapsedSeconds * ((competitorState.wpm * 1.5) * 5 / 60) / textLength) * 100;
+                progressPercent = Math.max(baselineProgress, timeProgress);
+            } else {
+                const charsPerSecond = (competitorState.wpm * 5) / 60;
+                const totalCharsTypedByAI = charsPerSecond * elapsedSeconds;
+                progressPercent = (totalCharsTypedByAI / textLength) * 100;
+            }
         } else {
             const previousProgress = competitorState.progress;
             progressPercent = previousProgress;
         }
 
         competitorState.progress = Math.min(100, progressPercent);
+        if (competitorState.progress >= 100 && !competitorState.finishTime) {
+            competitorState.finishTime = Date.now();
+        }
         aiPlayer.style.left = `calc(${Math.min(100, competitorState.progress)}% - 44px)`;
 
         // Update Ghost Racer position

@@ -241,7 +241,9 @@
 
         const elapsedTime = (Date.now() - gameState.startTime) / 1000;
         if (elapsedTime > 0) {
-            const wpm = Math.round((typedValue.length / 5) / (elapsedTime / 60));
+            const rawWpm = ((typedValue.length / 5) / (elapsedTime / 60));
+            const accuracyVal = typedValue.length > 0 ? (correctChars / typedValue.length) : 1;
+            const wpm = Math.round(rawWpm * accuracyVal);
             DOMElements.gameWpm().textContent = wpm > 0 ? wpm : 0;
         }
     }
@@ -262,14 +264,18 @@
         const textDisplay = DOMElements.textDisplay();
         const correctChars = textDisplay.querySelectorAll('.correct').length;
 
-        const wpm = Math.round((typingInput.value.length / 5) / (elapsedTime / 60));
         const accuracy = typingInput.value.length > 0 ? Math.round((correctChars / typingInput.value.length) * 100) : 100;
+        const rawWpm = (typingInput.value.length / 5) / (elapsedTime / 60);
+        const wpm = Math.round(rawWpm * (accuracy / 100));
 
         const wordsTyped = typingInput.value.trim().split(/\s+/).filter(Boolean).length;
         
-        // Check if player won
+        // Check if player won: player only wins if competitor has not finished yet, and player's accuracy is >= 90%.
         const competitorState = CompetitorAI.getCompetitorState();
-        const won = progressToPercentage(typingInput.value.length) >= competitorState.progress;
+        let won = !competitorState.finishTime || competitorState.progress < 100;
+        if (accuracy < 90) {
+            won = false;
+        }
 
         // Trigger complete sound
         SoundEngine.playSuccessSound();

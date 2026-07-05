@@ -390,9 +390,8 @@
                     <div id="theme-selector" class="grid grid-cols-3 gap-2 bg-secondary p-2.5 rounded-xl border border-[var(--border-color)]"></div>
                 </div>
                 <div>
-                    <label for="ai-speed-slider" class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">AI Opponent Speed: <span id="ai-speed-value" class="text-primary font-black">70</span> WPM</label>
+                    <label for="ai-speed-slider" class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Set Opponent Speed: <span id="ai-speed-value" class="text-primary font-black">70</span> WPM</label>
                     <input type="range" id="ai-speed-slider" min="40" max="140" value="70" class="w-full">
-                    <p class="text-[0.65rem] text-secondary mt-1">This sets the default race baseline speed if no previous records exist on the selected level.</p>
                 </div>
             </div>
         </div>
@@ -422,6 +421,11 @@
                     <p id="results-xp" class="stat-large font-black text-[var(--accent-primary)]">0</p>
                     <span class="text-xs text-secondary font-mono">points</span>
                 </div>
+            </div>
+            
+            <div id="results-outcome-box" class="bg-secondary/50 border border-[var(--border-color)] p-4 rounded-xl mb-4 text-center">
+                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-1.5">Race Outcome</h4>
+                <p id="results-outcome-comment" class="text-sm text-secondary leading-relaxed font-semibold">Calculating outcome...</p>
             </div>
             
             <div class="bg-secondary/50 border border-[var(--border-color)] p-4 rounded-xl mb-8 text-center">
