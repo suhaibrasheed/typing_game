@@ -228,6 +228,80 @@ function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseW
     showModal('results-modal');
 }
 
+function getRankIcon(rankName) {
+    const iconMap = {
+        // Nature (Seedling)
+        "Mr. Zero": "fa-circle-notch",
+        "Seed": "fa-seedling",
+        "Bud": "fa-spa",
+        "Sprout": "fa-leaf",
+        "Sapling": "fa-seedling",
+        "Tree": "fa-tree",
+        
+        // Metallurgy
+        "Copper": "fa-hammer",
+        "Iron": "fa-anchor",
+        "Steel": "fa-cubes",
+        "Silver": "fa-coins",
+        "Gold": "fa-trophy",
+        
+        // Gemstones
+        "Amber": "fa-gem",
+        "Opal": "fa-gem",
+        "Jade": "fa-gem",
+        "Amethyst": "fa-gem",
+        "Topaz": "fa-gem",
+        "Sapphire": "fa-gem",
+        "Emerald": "fa-gem",
+        "Ruby": "fa-gem",
+        "Diamond": "fa-gem",
+        "Onyx": "fa-gem",
+        
+        // Combatants
+        "Knight": "fa-chess-knight",
+        "Champion": "fa-award",
+        "Warrior": "fa-shield-halved",
+        "Victor": "fa-medal",
+        "Hero": "fa-crown",
+        
+        // Speedsters
+        "Swift": "fa-wind",
+        "Rapid": "fa-gauge-high",
+        "Quick": "fa-bolt",
+        "Speedy": "fa-person-running",
+        "Sonic": "fa-jet-fighter",
+        
+        // Celestial
+        "Force": "fa-sun",
+        "Power": "fa-moon",
+        "Energy": "fa-bolt-lightning",
+        "Strength": "fa-dumbbell",
+        "Might": "fa-hand-fist",
+        
+        // Cosmic
+        "Star": "fa-star",
+        "Nebula": "fa-bahai",
+        "Nova": "fa-burst",
+        "Supernova": "fa-user-astronaut",
+        "Galaxy": "fa-globe",
+        
+        // Legends
+        "Legend": "fa-dragon",
+        "Mythic": "fa-fire-flame-curved",
+        "Ancient": "fa-monument",
+        "Titan": "fa-mountain",
+        "Immortal": "fa-infinity",
+        
+        // Eternals
+        "Eternal": "fa-hourglass-start",
+        "Infinity": "fa-infinity",
+        "Nexus": "fa-circle-nodes",
+        "Apex": "fa-mountain-sun",
+        "KashTyper Elite": "fa-ranking-star"
+    };
+    return iconMap[rankName] || "fa-trophy";
+}
+
 // 3. Rank Modal UI
 function renderRankModal(profile) {
     const modalRankName = document.getElementById('modal-rank-name');
@@ -266,6 +340,8 @@ function renderRankModal(profile) {
         modalRankEmblem.style.setProperty('--emblem-glow-color', `${currentRank.colors[0]}40`);
         modalRankEmblem.style.setProperty('--emblem-border-color', `${currentRank.colors[0]}80`);
         modalRankEmblem.style.background = `linear-gradient(135deg, ${currentRank.colors.join(', ')})`;
+        const iconClass = getRankIcon(currentRank.name);
+        modalRankEmblem.innerHTML = `<i class="fa-solid ${iconClass} text-3xl text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] z-10"></i>`;
     }
     const modalContent = document.querySelector('#rank-modal .modal-content');
     if (modalContent) {
