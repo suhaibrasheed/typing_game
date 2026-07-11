@@ -61,6 +61,7 @@
         gameState.soundTheme = profileSettings.soundTheme;
         gameState.lastTypedLength = 0;
         gameState.wordsWithMistakes = new Set();
+        gameState.lastOffsetTop = null; // <-- Add this line
 
         clearInterval(gameState.timerInterval);
         clearInterval(gameState.competitorInterval);
@@ -210,10 +211,11 @@
             caret.style.left = `${charSpan.offsetLeft}px`;
             caret.style.top = `${charSpan.offsetTop}px`;
             caret.style.height = `${charSpan.offsetHeight}px`;
-
-            // Center Stage focus scrolling
-            const targetScrollTop = charSpan.offsetTop - (textDisplay.clientHeight / 2) + (charSpan.offsetHeight / 2);
-            textDisplay.scrollTop = targetScrollTop;
+            // Scroll smoothly only when active line (offsetTop) changes
+            if (charSpan.offsetTop !== gameState.lastOffsetTop) {
+                gameState.lastOffsetTop = charSpan.offsetTop;
+                charSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
     }
 
@@ -309,6 +311,42 @@
         }
     }
 
+    function handleKeyDown(event) {
+        if (event.key !== 'Backspace') return;
+        const field = event.currentTarget;
+        const cursor = field.selectionStart;
+        
+        if (event.ctrlKey || event.metaKey) {
+            event.preventDefault();
+            if (field.selectionStart !== field.selectionEnd) {
+                const start = field.selectionStart;
+                const end = field.selectionEnd;
+                field.value = field.value.slice(0, start) + field.value.slice(end);
+                field.selectionStart = field.selectionEnd = start;
+                field.dispatchEvent(new Event('input'));
+                return;
+            }
+            
+            const prefix = field.value.slice(0, cursor);
+            let i = cursor - 1;
+            // Skip trailing whitespace
+            while (i >= 0 && /\s/.test(prefix[i])) {
+                i--;
+            }
+            // Skip word characters
+            while (i >= 0 && !/\s/.test(prefix[i])) {
+                i--;
+            }
+            const deleteStart = i + 1;
+            
+            if (cursor > deleteStart) {
+                field.value = field.value.slice(0, deleteStart) + field.value.slice(cursor);
+                field.selectionStart = field.selectionEnd = deleteStart;
+                field.dispatchEvent(new Event('input'));
+            }
+        }
+    }
+
     function getWordAtCharIndex(text, index) {
         if (index < 0 || index >= text.length) return '';
         let start = index;
@@ -326,6 +364,7 @@
         gameState,
         startGame,
         handleTypingInput,
+        handleKeyDown,
         updateCaretPosition,
         abortGame
     };

@@ -193,17 +193,28 @@ function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseW
             <button id="res-btn-menu" class="btn btn-secondary w-full sm:w-auto">MainMenu</button>
         `;
 
+        let cooldownActive = true;
+        setTimeout(() => { cooldownActive = false; }, 800);
+
+        const nextBtn = document.getElementById('res-btn-next');
+        if (nextBtn) {
+            setTimeout(() => nextBtn.focus(), 100);
+        }
+
         document.getElementById('res-btn-retry').onclick = () => {
+            if (cooldownActive) return;
             SoundEngine.playTapSound();
             hideModal('results-modal');
             onRetry();
         };
         document.getElementById('res-btn-next').onclick = () => {
+            if (cooldownActive) return;
             SoundEngine.playTapSound();
             hideModal('results-modal');
             onNext();
         };
         document.getElementById('res-btn-menu').onclick = () => {
+            if (cooldownActive) return;
             SoundEngine.playTapSound();
             hideModal('results-modal');
             onMenu();
@@ -225,6 +236,8 @@ function renderRankModal(profile) {
     const progressText = document.getElementById('modal-progress-text');
     const currRankLabel = document.getElementById('modal-curr-rank-label');
     const nextRankLabel = document.getElementById('modal-next-rank-label');
+    const modalRankGlow = document.getElementById('modal-rank-glow');
+    const modalRankEmblem = document.getElementById('modal-rank-emblem');
 
     const words = profile.totalWordsTyped || 0;
     
@@ -246,11 +259,31 @@ function renderRankModal(profile) {
         modalRankName.style.webkitBackgroundClip = 'text';
         modalRankName.style.webkitTextFillColor = 'transparent';
     }
+    if (modalRankGlow) {
+        modalRankGlow.style.background = `linear-gradient(135deg, ${currentRank.colors.join(', ')})`;
+    }
+    if (modalRankEmblem) {
+        modalRankEmblem.style.setProperty('--emblem-glow-color', `${currentRank.colors[0]}40`);
+        modalRankEmblem.style.setProperty('--emblem-border-color', `${currentRank.colors[0]}80`);
+        modalRankEmblem.style.background = `linear-gradient(135deg, ${currentRank.colors.join(', ')})`;
+    }
+    const modalContent = document.querySelector('#rank-modal .modal-content');
+    if (modalContent) {
+        modalContent.className = 'modal-content relative max-w-md overflow-hidden';
+        if (currentRank.class) {
+            modalContent.classList.add(currentRank.class);
+        }
+        modalContent.style.setProperty('--rank-glow-color', `${currentRank.colors[0]}20`);
+        modalContent.style.setProperty('--emblem-glow-color', currentRank.colors[0]);
+        modalContent.style.setProperty('--emblem-border-color', `${currentRank.colors[0]}80`);
+    }
+
     if (modalTotalWords) {
         modalTotalWords.textContent = `Total XP: ${Math.round(words).toLocaleString()}`;
     }
     if (currRankLabel) {
         currRankLabel.textContent = currentRank.name;
+        currRankLabel.style.color = currentRank.colors[0];
     }
 
     let progress = 100;
@@ -262,13 +295,30 @@ function renderRankModal(profile) {
         const currentDiff = words - currentRank.threshold;
         progress = Math.min(100, Math.max(0, (currentDiff / thresholdDiff) * 100));
 
-        if (nextRankLabel) nextRankLabel.textContent = nextRankObj.name;
+        if (nextRankLabel) {
+            nextRankLabel.textContent = nextRankObj.name;
+            nextRankLabel.style.color = nextRankObj.colors[0];
+        }
     } else {
-        if (nextRankLabel) nextRankLabel.textContent = "Max Rank reached!";
+        if (nextRankLabel) {
+            nextRankLabel.textContent = "Max Rank";
+            nextRankLabel.style.color = currentRank.colors[0];
+        }
     }
 
+    const formatKMetric = (val) => {
+        if (val >= 1000) {
+            const kVal = val / 1000;
+            return (kVal % 1 === 0 ? kVal.toFixed(0) : kVal.toFixed(1)) + 'k';
+        }
+        return Math.round(val).toString();
+    };
+
     if (progressText) {
-        progressText.textContent = `${Math.round(words).toLocaleString()} / ${maxVal.toLocaleString()}`;
+        progressText.textContent = `${formatKMetric(words)} / ${formatKMetric(maxVal)}`;
+        progressText.style.backgroundImage = `linear-gradient(135deg, ${currentRank.colors.join(', ')})`;
+        progressText.style.webkitBackgroundClip = 'text';
+        progressText.style.webkitTextFillColor = 'transparent';
     }
 
     if (rankProgressBar) {
@@ -335,6 +385,7 @@ function triggerRankUpCelebration(oldRankName, newRankName, words, onContinue) {
             hideModal('rank-up-modal');
             onContinue();
         };
+        setTimeout(() => continueBtn.focus(), 100);
     }
 
     // Play fanfare

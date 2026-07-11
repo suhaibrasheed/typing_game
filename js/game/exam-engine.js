@@ -278,12 +278,49 @@
     function restrictBackspace(event) {
         if (event.key !== 'Backspace') return;
         
-        // If the exam is NOT JKSSB or High Court Typist (meaning it is SSC/RRB), allow full backspace
-        if (selectedExam !== 'JKSSB Junior Assistant' && selectedExam !== 'High Court Typist') {
+        const isRestrictedMode = (selectedExam === 'JKSSB Junior Assistant' || selectedExam === 'High Court Typist');
+        const field = event.currentTarget;
+        const cursor = field.selectionStart;
+        // Custom Cmd/Ctrl + Backspace word deletion
+        if (event.ctrlKey || event.metaKey) {
+            event.preventDefault();
+            if (field.selectionStart !== field.selectionEnd) {
+                // Delete selected text
+                const start = field.selectionStart;
+                const end = field.selectionEnd;
+                field.value = field.value.slice(0, start) + field.value.slice(end);
+                field.selectionStart = field.selectionEnd = start;
+                field.dispatchEvent(new Event('input'));
+                return;
+            }
+            const prefix = field.value.slice(0, cursor);
+            let deleteStart = 0;
+            if (isRestrictedMode) {
+                const lastWhitespace = Math.max(prefix.lastIndexOf(' '), prefix.lastIndexOf('\n'), prefix.lastIndexOf('\t'));
+                deleteStart = lastWhitespace + 1;
+            } else {
+                let i = cursor - 1;
+                // Skip trailing whitespace
+                while (i >= 0 && /\s/.test(prefix[i])) {
+                    i--;
+                }
+                // Skip word characters
+                while (i >= 0 && !/\s/.test(prefix[i])) {
+                    i--;
+                }
+                deleteStart = i + 1;
+            }
+            if (cursor > deleteStart) {
+                field.value = field.value.slice(0, deleteStart) + field.value.slice(cursor);
+                field.selectionStart = field.selectionEnd = deleteStart;
+                field.dispatchEvent(new Event('input'));
+            }
             return;
         }
-
-        const field = event.currentTarget, cursor = field.selectionStart;
+        // If the exam is NOT JKSSB or High Court Typist (meaning it is SSC/RRB), allow full backspace
+        if (!isRestrictedMode) {
+            return;
+        }
         if (field.selectionStart !== field.selectionEnd) { event.preventDefault(); return; }
         const prefix = field.value.slice(0, cursor);
         const lastWhitespace = Math.max(prefix.lastIndexOf(' '), prefix.lastIndexOf('\n'), prefix.lastIndexOf('\t'));

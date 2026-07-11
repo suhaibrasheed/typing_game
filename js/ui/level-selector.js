@@ -1,7 +1,7 @@
 (function() {
     async function renderLevelSelector(protyperLevels, upscLevels, jkssbLevels, runsStats, activeTab, activeCategory) {
         renderCurriculumTabs(protyperLevels, upscLevels, jkssbLevels, activeTab);
-        renderCategoryFilters(protyperLevels, upscLevels, jkssbLevels, activeTab, activeCategory);
+        await renderCategoryFilters(protyperLevels, upscLevels, jkssbLevels, activeTab, activeCategory); // <-- Add 'await' here
         await renderLevelsGrid(protyperLevels, upscLevels, jkssbLevels, runsStats, activeTab, activeCategory);
     }
 
@@ -39,7 +39,7 @@
         `;
     }
 
-    function renderCategoryFilters(protyperLevels, upscLevels, jkssbLevels, activeTab, activeCategory) {
+    async function renderCategoryFilters(protyperLevels, upscLevels, jkssbLevels, activeTab, activeCategory) {
         const filtersContainer = document.getElementById('level-category-tabs');
         if (!filtersContainer) return;
 
@@ -120,8 +120,8 @@
         gridContainer.innerHTML = '';
         
         if (activeTab === 'mistakes') {
-            const mistakeWords = window.StorageDB && window.StorageDB.getMistakeWords ? await StorageDB.getMistakeWords() : [];
-            if (mistakeWords.length === 0) {
+            const rawMistakes = window.StorageDB && window.StorageDB.getMistakeWordsRaw ? await StorageDB.getMistakeWordsRaw() : [];
+            if (rawMistakes.length === 0) {
                 gridContainer.innerHTML = `
                     <div class="exam-empty-state col-span-full py-12 text-center border-dashed border border-white/5 rounded-2xl p-8" style="grid-column: 1 / -1;">
                         <span class="text-3xl opacity-50 block mb-2">🎉</span>
@@ -131,65 +131,72 @@
                 `;
                 return;
             }
-
-            // Group unique wrong words into sets of up to 75 words
+            // Group unique wrong words into sets of up to 37 words
             const chunks = [];
-            for (let i = 0; i < mistakeWords.length; i += 75) {
-                chunks.push(mistakeWords.slice(i, i + 75));
+            for (let i = 0; i < rawMistakes.length; i += 37) {
+                chunks.push(rawMistakes.slice(i, i + 37));
             }
-
             window.mistakesSessionsList = [];
-
             chunks.forEach((group, groupIdx) => {
-                // To have each word repeated at least 4 times and have lesson around 300 words:
-                // Repeat count is max(4, ceil(300 / group.length))
-                const repeatCount = Math.max(4, Math.ceil(300 / group.length));
+                // Group is an array of objects: { word, weight, streak, timestamp }
+                let totalWeight = 0;
+                let totalStreak = 0;
+                group.forEach(item => {
+                    totalWeight += (item.weight || 1);
+                    totalStreak += (item.streak || 0);
+                });
+                const avgWeight = (totalWeight / group.length).toFixed(1);
+                const avgStreak = (totalStreak / group.length).toFixed(1);
+
+                // Build lesson words using weighted spaced repetition
                 const lessonWords = [];
-                for (let r = 0; r < repeatCount; r++) {
-                    const shuffled = [...group].sort(() => Math.random() - 0.5);
+                const wordRepCounts = group.map(item => {
+                    const weight = item.weight || 1;
+                    if (weight >= 5) return 6;
+                    if (weight >= 3) return 4;
+                    return 2;
+                });
+
+                const maxReps = Math.max(...wordRepCounts);
+                for (let r = 0; r < maxReps; r++) {
+                    const activeWordsInRound = [];
+                    group.forEach((item, idx) => {
+                        if (r < wordRepCounts[idx]) {
+                            activeWordsInRound.push(item.word);
+                        }
+                    });
+                    const shuffled = [...activeWordsInRound].sort(() => Math.random() - 0.5);
                     lessonWords.push(...shuffled);
                 }
+
                 const lessonText = lessonWords.join(' ');
+                const wordsInGroup = group.map(item => item.word);
 
                 window.mistakesSessionsList[groupIdx] = {
                     id: groupIdx,
-                    name: `Mistakes Lesson ${groupIdx + 1}`,
+                    name: `Precision Training ${groupIdx + 1}`,
                     text: lessonText,
                     curriculum: 'mistakes',
                     uniqueCount: group.length,
-                    wordsInGroup: group
+                    wordsInGroup: wordsInGroup
                 };
-
-                const statKey = `mistakes_${groupIdx}`;
-                const levelStats = runsStats[statKey] || [];
-                const validRuns = levelStats.filter(r => r.accuracy >= 90);
-                const bestRun = validRuns.reduce((best, run) => run.wpm > best.wpm ? run : best, { wpm: 0, accuracy: 0 });
-
                 const button = document.createElement('button');
                 button.className = `level-btn p-5 rounded-2xl text-left transition duration-300 border flex flex-col justify-between group bg-secondary/40 backdrop-blur-md border-white/5 hover:border-[var(--accent-primary)] hover:shadow-[0_0_20px_rgba(129,140,248,0.15)] hover:-translate-y-1 cursor-pointer`;
                 button.dataset.levelId = groupIdx;
                 button.dataset.tab = 'mistakes';
-
                 button.innerHTML = `
-                    <div class="w-full flex justify-between items-start mb-2 gap-2">
+                    <div class="w-full flex flex-col justify-between h-full">
                         <div>
-                            <p class="font-bold text-primary text-sm group-hover:text-[var(--accent-primary)] transition duration-200 leading-snug">Mistakes Lesson ${groupIdx + 1}</p>
-                            <small class="text-[0.62rem] text-[var(--accent-primary)] font-bold mt-1 block">${group.length} unique words (4x review)</small>
-                        </div>
-                    </div>
-                    <div class="w-full mt-auto pt-2 border-t border-white/5">
-                        <div class="text-[0.68rem] text-secondary flex justify-between">
-                            <span>Best WPM</span>
-                            <span class="font-bold text-primary">${bestRun.wpm > 0 ? `${bestRun.wpm}` : '--'}</span>
-                        </div>
-                        <div class="text-[0.68rem] text-secondary flex justify-between mt-1">
-                            <span>Accuracy</span>
-                            <span class="font-bold text-primary">${bestRun.accuracy > 0 ? `${bestRun.accuracy}%` : '--'}</span>
-                        </div>
-                        <div class="w-full mt-4">
-                            <div class="w-full bg-secondary/80 rounded-full h-1.5 overflow-hidden border border-white/5">
-                                <div class="h-full rounded-full transition-all duration-500" style="width: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));"></div>
+                            <p class="font-bold text-primary text-sm group-hover:text-[var(--accent-primary)] transition duration-200 leading-snug">Precision Training ${groupIdx + 1}</p>
+                            <small class="text-[0.62rem] text-[var(--accent-primary)] font-bold mt-1 block">${group.length} words (Spaced Review)</small>
+                            <div class="flex gap-2 mt-2">
+                                <span class="text-[0.58rem] bg-red-500/10 text-red-400 px-2 py-0.5 rounded border border-red-500/10">Avg Err: ${avgWeight}</span>
+                                <span class="text-[0.58rem] bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/10">Streak: ${avgStreak}/3</span>
                             </div>
+                        </div>
+                        <div class="w-full mt-auto pt-4 flex items-center justify-between border-t border-white/5">
+                            <span class="text-[0.65rem] text-secondary uppercase font-bold tracking-wider">Practice Lesson</span>
+                            <span class="text-xs opacity-50">⚡</span>
                         </div>
                     </div>
                 `;

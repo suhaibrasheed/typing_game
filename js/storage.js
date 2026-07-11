@@ -141,17 +141,30 @@
             const store = getStore("mistakes_bucket", "readwrite");
             let completed = 0;
             if (wordsArray.length === 0) return resolve();
-            wordsArray.forEach(w => {
-                const wordClean = w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "");
-                if (!wordClean) {
-                    completed++;
-                    if (completed === wordsArray.length) resolve();
-                    return;
-                }
-                const request = store.put({ word: wordClean, timestamp: Date.now() });
-                request.onsuccess = request.onerror = () => {
-                    completed++;
-                    if (completed === wordsArray.length) resolve();
+            
+            // Clean up and deduplicate word list to prevent concurrent IndexedDB race conditions on the same key
+            const uniqueCleanWords = [...new Set(wordsArray.map(w => w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "").trim()))].filter(Boolean);
+            if (uniqueCleanWords.length === 0) return resolve();
+            
+            uniqueCleanWords.forEach(wordClean => {
+                const getReq = store.get(wordClean);
+                getReq.onsuccess = () => {
+                    const existing = getReq.result || { word: wordClean, weight: 0, streak: 0 };
+                    existing.weight = (existing.weight || 0) + 1;
+                    existing.streak = 0; // reset streak on mistake
+                    existing.timestamp = Date.now();
+                    const putReq = store.put(existing);
+                    putReq.onsuccess = putReq.onerror = () => {
+                        completed++;
+                        if (completed === uniqueCleanWords.length) resolve();
+                    };
+                };
+                getReq.onerror = () => {
+                    const putReq = store.put({ word: wordClean, weight: 1, streak: 0, timestamp: Date.now() });
+                    putReq.onsuccess = putReq.onerror = () => {
+                        completed++;
+                        if (completed === uniqueCleanWords.length) resolve();
+                    };
                 };
             });
         });
@@ -163,7 +176,23 @@
             const request = store.getAll();
             request.onsuccess = () => {
                 const list = request.result || [];
+                // Sort by weight descending, then timestamp descending
+                list.sort((a, b) => (b.weight || 1) - (a.weight || 1) || b.timestamp - a.timestamp);
                 resolve(list.map(item => item.word));
+            };
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    function getMistakeWordsRaw() {
+        return new Promise((resolve) => {
+            const store = getStore("mistakes_bucket", "readonly");
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const list = request.result || [];
+                // Sort by weight descending
+                list.sort((a, b) => (b.weight || 1) - (a.weight || 1) || b.timestamp - a.timestamp);
+                resolve(list);
             };
             request.onerror = () => resolve([]);
         });
@@ -174,12 +203,40 @@
             const store = getStore("mistakes_bucket", "readwrite");
             let completed = 0;
             if (wordsArray.length === 0) return resolve();
-            wordsArray.forEach(w => {
-                const wordClean = w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "");
-                const request = store.delete(wordClean);
-                request.onsuccess = request.onerror = () => {
+            
+            // Clean up and deduplicate word list to prevent concurrent IndexedDB race conditions
+            const uniqueCleanWords = [...new Set(wordsArray.map(w => w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "").trim()))].filter(Boolean);
+            if (uniqueCleanWords.length === 0) return resolve();
+
+            uniqueCleanWords.forEach(wordClean => {
+                const getReq = store.get(wordClean);
+                getReq.onsuccess = () => {
+                    const existing = getReq.result;
+                    if (existing) {
+                        existing.streak = (existing.streak || 0) + 1;
+                        if (existing.streak >= 3) {
+                            // Graduate word - delete it
+                            const delReq = store.delete(wordClean);
+                            delReq.onsuccess = delReq.onerror = () => {
+                                completed++;
+                                if (completed === uniqueCleanWords.length) resolve();
+                            };
+                        } else {
+                            // Save updated streak
+                            const putReq = store.put(existing);
+                            putReq.onsuccess = putReq.onerror = () => {
+                                completed++;
+                                if (completed === uniqueCleanWords.length) resolve();
+                            };
+                        }
+                    } else {
+                        completed++;
+                        if (completed === uniqueCleanWords.length) resolve();
+                    }
+                };
+                getReq.onerror = () => {
                     completed++;
-                    if (completed === wordsArray.length) resolve();
+                    if (completed === uniqueCleanWords.length) resolve();
                 };
             });
         });
@@ -248,6 +305,7 @@
         getExamAttempts,
         addMistakeWords,
         getMistakeWords,
+        getMistakeWordsRaw,
         removeMistakeWords
     };
 })();

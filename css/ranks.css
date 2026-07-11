@@ -192,3 +192,52 @@
         height: 1.1rem;
     }
 }
+
+/* Rank Modal Card Redesign styles */
+.rank-card-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 1.5rem;
+    opacity: 0.08;
+    pointer-events: none;
+    transition: background 0.5s ease;
+    z-index: 0;
+}
+
+#rank-modal .modal-content {
+    background: rgba(18, 18, 18, 0.8) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 100px var(--rank-glow-color, rgba(255, 255, 255, 0.02));
+    transition: box-shadow 0.5s ease;
+    z-index: 102;
+    overflow: hidden;
+}
+
+#modal-rank-emblem {
+    box-shadow: 0 0 20px var(--emblem-glow-color, rgba(255, 255, 255, 0.2)),
+                inset 0 0 15px rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid var(--emblem-border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 50%;
+    animation: emblem-float 4s ease-in-out infinite;
+}
+
+#modal-rank-emblem::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px dashed var(--emblem-border-color, rgba(255, 255, 255, 0.2));
+    animation: spin 20s linear infinite;
+    opacity: 0.6;
+}
+
+@keyframes emblem-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}

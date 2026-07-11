@@ -450,6 +450,7 @@
         // 2. Typing interactions
         const input = DOMElements.typingInput();
         input.addEventListener('input', GameEngine.handleTypingInput);
+        input.addEventListener('keydown', GameEngine.handleKeyDown);
 
         const display = document.getElementById('text-display');
         if (display) {
@@ -675,4 +676,6 @@
             ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu);
         }
     });
+
+    window.syncDataAndDrawUI = syncDataAndDrawUI;
 })();
