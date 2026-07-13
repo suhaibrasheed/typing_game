@@ -1,6 +1,6 @@
 (function() {
     const DB_NAME = "ProTyperUltimateDB";
-    const DB_VERSION = 3;
+    const DB_VERSION = 4;
     let dbInstance = null;
 
     function initDB() {
@@ -21,6 +21,7 @@
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
+                const txn = event.target.transaction;
 
                 // 1. user_profile store (key-value store for user configurations)
                 if (!db.objectStoreNames.contains("user_profile")) {
@@ -28,22 +29,41 @@
                 }
 
                 // 2. runs_history store (tracks game stats per level attempt)
+                let runStore;
                 if (!db.objectStoreNames.contains("runs_history")) {
-                    const runStore = db.createObjectStore("runs_history", { keyPath: "id", autoIncrement: true });
+                    runStore = db.createObjectStore("runs_history", { keyPath: "id", autoIncrement: true });
+                } else {
+                    runStore = txn.objectStore("runs_history");
+                }
+                if (!runStore.indexNames.contains("curriculum")) {
                     runStore.createIndex("curriculum", "curriculum", { unique: false });
+                }
+                if (!runStore.indexNames.contains("levelId")) {
                     runStore.createIndex("levelId", "levelId", { unique: false });
+                }
+                if (!runStore.indexNames.contains("timestamp")) {
                     runStore.createIndex("timestamp", "timestamp", { unique: false });
                 }
 
                 // 3. keystroke_analytics store (tracks typed character latency)
+                let keyStore;
                 if (!db.objectStoreNames.contains("keystroke_analytics")) {
-                    const keyStore = db.createObjectStore("keystroke_analytics", { keyPath: "id", autoIncrement: true });
+                    keyStore = db.createObjectStore("keystroke_analytics", { keyPath: "id", autoIncrement: true });
+                } else {
+                    keyStore = txn.objectStore("keystroke_analytics");
+                }
+                if (!keyStore.indexNames.contains("char")) {
                     keyStore.createIndex("char", "char", { unique: false });
                 }
 
                 // 4. exams_history store (tracks mock exams taken by user)
+                let examStore;
                 if (!db.objectStoreNames.contains("exams_history")) {
-                    const examStore = db.createObjectStore("exams_history", { keyPath: "id", autoIncrement: true });
+                    examStore = db.createObjectStore("exams_history", { keyPath: "id", autoIncrement: true });
+                } else {
+                    examStore = txn.objectStore("exams_history");
+                }
+                if (!examStore.indexNames.contains("timestamp")) {
                     examStore.createIndex("timestamp", "timestamp", { unique: false });
                 }
 
@@ -213,16 +233,18 @@
                 getReq.onsuccess = () => {
                     const existing = getReq.result;
                     if (existing) {
-                        existing.streak = (existing.streak || 0) + 1;
-                        if (existing.streak >= 3) {
-                            // Graduate word - delete it
+                        const currentWeight = existing.weight || 1;
+                        if (currentWeight <= 1) {
+                            // Graduate word - delete it entirely since error count hit 0
                             const delReq = store.delete(wordClean);
                             delReq.onsuccess = delReq.onerror = () => {
                                 completed++;
                                 if (completed === uniqueCleanWords.length) resolve();
                             };
                         } else {
-                            // Save updated streak
+                            // Reduce weight by 1
+                            existing.weight = currentWeight - 1;
+                            existing.streak = (existing.streak || 0) + 1;
                             const putReq = store.put(existing);
                             putReq.onsuccess = putReq.onerror = () => {
                                 completed++;

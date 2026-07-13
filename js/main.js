@@ -28,8 +28,36 @@
         donationBtn: () => document.getElementById('donation-btn')
     };
 
+    function updateSplashProgress(percent) {
+        const bar = document.getElementById('splash-loading-bar');
+        if (bar) {
+            bar.style.width = `${percent}%`;
+        }
+    }
+
+    function hideSplashScreen() {
+        const splash = document.getElementById('app-splash-screen');
+        if (splash) {
+            const card = splash.querySelector('div');
+            if (card) {
+                card.classList.add('scale-90', 'opacity-0');
+            }
+            splash.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                splash.remove();
+            }, 800);
+        }
+    }
+
     // Bootstrap application on DOM ready
     document.addEventListener('DOMContentLoaded', async () => {
+        const startTime = Date.now();
+        
+        // Start smooth 1.8s progress bar transition immediately
+        setTimeout(() => {
+            updateSplashProgress(100);
+        }, 50);
+
         try {
             await StorageDB.initDB();
             appState.profile = await StorageDB.getUserProfile();
@@ -40,6 +68,11 @@
             
             // Sync stats & streaks
             await syncDataAndDrawUI();
+            
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = Math.max(0, 1800 - elapsedTime);
+            setTimeout(hideSplashScreen, remainingTime);
+            
             checkDailyStreakBroken();
             rotatePowerQuote();
             
@@ -65,11 +98,18 @@
             console.log("ProTyper SPA Engine Loaded.");
         } catch (e) {
             console.error("Critical error bootstrapping application:", e);
+            hideSplashScreen();
         }
     });
 
     async function syncDataAndDrawUI() {
-        appState.attempts = await StorageDB.getAllAttempts();
+        // Run database reads concurrently to optimize startup speed
+        const [attempts, latencies] = await Promise.all([
+            StorageDB.getAllAttempts(),
+            StorageDB.getKeyLatencies()
+        ]);
+        
+        appState.attempts = attempts || [];
         
         // Calculate average WPM from history
         const validAttemptsForAvg = appState.attempts.filter(r => r.wpm > 0);
@@ -89,8 +129,6 @@
             }
             appState.runsStats[key].push(run);
         });
-
-        const latencies = await StorageDB.getKeyLatencies();
 
         // Ranks UI update
         updateRanksProgressBadge();
@@ -540,7 +578,7 @@
 
     // 4. Session complete callback handling
     window.addEventListener('typingGameComplete', async (e) => {
-        const { wpm, accuracy, wordsTyped, won, levelId, curriculum } = e.detail;
+        const { wpm, accuracy, wordsTyped, won, levelId, curriculum, mistakeSummary } = e.detail;
 
         // Fetch previous best speed before syncing the new run
         const runsKey = `${curriculum}_${levelId}`;
@@ -662,18 +700,18 @@
                     newRankName, 
                     appState.profile.totalWordsTyped, 
                     () => {
-                        ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu);
+                        ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, mistakeSummary);
                     }
                 );
             } else {
-                ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu);
+                ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, mistakeSummary);
             }
         } catch (error) {
             console.error("Resilient recovery: error in game completion stats save:", error);
             // Always display the results modal to the user even if DB or rank checks fail
             const competitorState = CompetitorAI.getCompetitorState();
             const username = (appState.profile && appState.profile.username) || 'You';
-            ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu);
+            ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, null);
         }
     });
 

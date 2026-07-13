@@ -129,60 +129,99 @@ function renderSettingsModal(profile, onSaveCallback) {
 }
 
 // 2. Results Modal UI
-function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseWords, competitorState, username, onRetry, onNext, onMenu) {
+function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseWords, competitorState, username, onRetry, onNext, onMenu, mistakeSummary) {
     const title = document.getElementById('results-title');
     const wpmVal = document.getElementById('results-wpm');
     const accVal = document.getElementById('results-accuracy');
     const xpVal = document.getElementById('results-xp');
     const suggestion = document.getElementById('results-suggestion');
     const buttons = document.getElementById('results-buttons');
-    const outcomeComment = document.getElementById('results-outcome-comment');
+    const outcomeBox = document.getElementById('results-outcome-box');
 
-    if (title) title.textContent = won ? 'Victory!' : 'Defeat!';
+    if (title) title.textContent = mistakeSummary ? 'Training Complete!' : (won ? 'Victory!' : 'Defeat!');
     if (wpmVal) wpmVal.textContent = wpm;
     if (accVal) accVal.textContent = `${accuracy}%`;
     if (xpVal) xpVal.textContent = `+${xpEarned}`;
 
-    if (outcomeComment && competitorState) {
-        const opponentName = competitorState.name || 'Opponent';
-        const opponentWpm = Math.round(competitorState.wpm);
-        const wpmDiff = Math.abs(wpm - opponentWpm);
-        if (accuracy < 90) {
-            outcomeComment.innerHTML = `💀 <strong>Defeated due to low accuracy (${accuracy}%).</strong> Shortcuts don't win rewards, persistence does!`;
-        } else if (won) {
-            outcomeComment.innerHTML = `🏆 <strong>${username}</strong> defeated <strong>${opponentName}</strong> by being <strong>${wpmDiff} WPM</strong> faster!`;
-        } else {
-            outcomeComment.innerHTML = `💀 <strong>${opponentName}</strong> defeated <strong>${username}</strong> by being <strong>${wpmDiff} WPM</strong> faster!`;
+    if (mistakeSummary) {
+        if (outcomeBox) {
+            outcomeBox.innerHTML = `
+                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-2">Precision Review Summary</h4>
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    <div class="bg-green-500/10 border border-green-500/20 p-2.5 rounded-xl">
+                        <span class="block text-[0.62rem] text-green-400 font-bold uppercase tracking-wider">Graduated</span>
+                        <strong class="text-lg text-green-400 font-black">${mistakeSummary.graduated}</strong>
+                        <span class="block text-[0.52rem] text-secondary">fully cleared</span>
+                    </div>
+                    <div class="bg-blue-500/10 border border-blue-500/20 p-2.5 rounded-xl">
+                        <span class="block text-[0.62rem] text-blue-400 font-bold uppercase tracking-wider">Weakened</span>
+                        <strong class="text-lg text-blue-400 font-black">${mistakeSummary.reduced}</strong>
+                        <span class="block text-[0.52rem] text-secondary">errors reduced</span>
+                    </div>
+                    <div class="bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl">
+                        <span class="block text-[0.62rem] text-red-400 font-bold uppercase tracking-wider">Remaining</span>
+                        <strong class="text-lg text-red-400 font-black">${mistakeSummary.remaining}</strong>
+                        <span class="block text-[0.52rem] text-secondary">errors left</span>
+                    </div>
+                </div>
+            `;
         }
-    }
+        if (suggestion) {
+            if (mistakeSummary.graduated > 0) {
+                suggestion.innerHTML = `🎉 Outstanding! You completely cleared <strong>${mistakeSummary.graduated} word(s)</strong> from your mistake bucket! Keep practicing to graduate the rest.`;
+            } else {
+                suggestion.innerHTML = `💪 Good practice! Although no words graduated this run, you successfully weakened <strong>${mistakeSummary.reduced} word(s)</strong>. They are now closer to being removed!`;
+            }
+        }
+    } else {
+        if (outcomeBox) {
+            outcomeBox.innerHTML = `
+                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-1.5">Race Outcome</h4>
+                <p id="results-outcome-comment" class="text-sm text-secondary leading-relaxed font-semibold">Calculating outcome...</p>
+            `;
+        }
+        const outcomeComment = document.getElementById('results-outcome-comment');
+        if (outcomeComment && competitorState) {
+            const opponentName = competitorState.name || 'Opponent';
+            const opponentWpm = Math.round(competitorState.wpm);
+            const wpmDiff = Math.abs(wpm - opponentWpm);
+            if (accuracy < 90) {
+                outcomeComment.innerHTML = `💀 <strong>Defeated due to low accuracy (${accuracy}%).</strong> Shortcuts don't win rewards, persistence does!`;
+            } else if (won) {
+                outcomeComment.innerHTML = `🏆 <strong>${username}</strong> defeated <strong>${opponentName}</strong> by being <strong>${wpmDiff} WPM</strong> faster!`;
+            } else {
+                outcomeComment.innerHTML = `💀 <strong>${opponentName}</strong> defeated <strong>${username}</strong> by being <strong>${wpmDiff} WPM</strong> faster!`;
+            }
+        }
 
-    // Calculate smart feedback metrics dynamically based on the performance-weighted XP formula
-    const currentXp = xpEarned;
-    const baseW = baseWords || 30;
-    const perfectAccXp = Math.max(1, Math.round(baseW * (wpm / 60) * 1.0));
-    const targetWpm = Math.round(wpm * 1.1);
-    const speedUpXp = Math.max(1, Math.round(baseW * (targetWpm / 60) * 1.0));
+        // Calculate smart feedback metrics dynamically based on the performance-weighted XP formula
+        const currentXp = xpEarned;
+        const baseW = baseWords || 30;
+        const perfectAccXp = Math.max(1, Math.round(baseW * (wpm / 60) * 1.0));
+        const targetWpm = Math.round(wpm * 1.1);
+        const speedUpXp = Math.max(1, Math.round(baseW * (targetWpm / 60) * 1.0));
 
-    // Intelligent, conversational performance coaching tips (7 granular cases)
-    if (suggestion) {
-        if (accuracy < 80) {
-            suggestion.innerHTML = `🎯 Your accuracy fell to <strong>${accuracy}%</strong>. Typos are heavily discounting your score. Let's ignore speed entirely for a moment and focus solely on hitting the correct keys. Slow down as much as you need to find a steady rhythm.`;
-        } else if (accuracy >= 80 && accuracy < 90) {
-            const loss = perfectAccXp - currentXp;
-            suggestion.innerHTML = `🎯 Your accuracy was <strong>${accuracy}%</strong>. You're hitting a good pace, but key slips are costing you. If you can tidy up those typos and maintain perfect accuracy, your score would jump to <span class="text-[var(--accent-primary)] font-bold">${perfectAccXp} XP</span> (an extra <strong>+${loss} XP</strong>). Focus on finger placement!`;
-        } else if (accuracy >= 90 && accuracy < 96) {
-            const loss = perfectAccXp - currentXp;
-            suggestion.innerHTML = `🎯 You are so close! Your accuracy was <strong>${accuracy}%</strong>. Eliminating those last few minor slip-ups at your current speed would have secured you <span class="text-[var(--accent-primary)] font-bold">${perfectAccXp} XP</span> (a clean <strong>+${loss} XP</strong> boost). Just a tiny bit more concentration will get you there.`;
-        } else if (wpm < 30) {
-            suggestion.innerHTML = `🐢 Flawless precision at <strong>${accuracy}%</strong> accuracy! Now it's time to build up your finger momentum. If you can push your speed just slightly to <strong>${targetWpm} WPM</strong> while staying accurate, you will unlock <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span> next time. Try looking slightly ahead at the next word!`;
-        } else if (wpm >= 30 && wpm < 60) {
-            suggestion.innerHTML = `🐢 Your typing is beautiful and precise (<strong>${accuracy}%</strong>)! Now, let's work on acceleration. If you can elevate your speed to <strong>${targetWpm} WPM</strong> while maintaining this precision, you will earn <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span>. Focus on keeping your hands relaxed.`;
-        } else if (wpm >= 60 && wpm < 90) {
-            const gain = speedUpXp - currentXp;
-            suggestion.innerHTML = `⚡ Great job! You are flying at <strong>${wpm} WPM</strong> with <strong>${accuracy}%</strong> accuracy. If you push your boundaries to reach <strong>${targetWpm} WPM</strong> with clean keystrokes, you will claim <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span> (a solid <strong>+${gain} XP</strong> increase). You've got this!`;
-        } else {
-            const gain = speedUpXp - currentXp;
-            suggestion.innerHTML = `👑 Elite typing! You clocked a blazing <strong>${wpm} WPM</strong> at <strong>${accuracy}%</strong> accuracy. If you challenge yourself to hit <strong>${targetWpm} WPM</strong> on your next run with this master precision, your score will soar to <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span> (a <strong>+${gain} XP</strong> gain). Truly outstanding!`;
+        // Intelligent, conversational performance coaching tips (7 granular cases)
+        if (suggestion) {
+            if (accuracy < 80) {
+                suggestion.innerHTML = `🎯 Your accuracy fell to <strong>${accuracy}%</strong>. Typos are heavily discounting your score. Let's ignore speed entirely for a moment and focus solely on hitting the correct keys. Slow down as much as you need to find a steady rhythm.`;
+            } else if (accuracy >= 80 && accuracy < 90) {
+                const loss = perfectAccXp - currentXp;
+                suggestion.innerHTML = `🎯 Your accuracy was <strong>${accuracy}%</strong>. You're hitting a good pace, but key slips are costing you. If you can tidy up those typos and maintain perfect accuracy, your score would jump to <span class="text-[var(--accent-primary)] font-bold">${perfectAccXp} XP</span> (an extra <strong>+${loss} XP</strong>). Focus on finger placement!`;
+            } else if (accuracy >= 90 && accuracy < 96) {
+                const loss = perfectAccXp - currentXp;
+                suggestion.innerHTML = `🎯 You are so close! Your accuracy was <strong>${accuracy}%</strong>. Eliminating those last few minor slip-ups at your current speed would have secured you <span class="text-[var(--accent-primary)] font-bold">${perfectAccXp} XP</span> (a clean <strong>+${loss} XP</strong> boost). Just a tiny bit more concentration will get you there.`;
+            } else if (wpm < 30) {
+                suggestion.innerHTML = `🐢 Flawless precision at <strong>${accuracy}%</strong> accuracy! Now it's time to build up your finger momentum. If you can push your speed just slightly to <strong>${targetWpm} WPM</strong> while staying accurate, you will unlock <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span> next time. Try looking slightly ahead at the next word!`;
+            } else if (wpm >= 30 && wpm < 60) {
+                suggestion.innerHTML = `🐢 Your typing is beautiful and precise (<strong>${accuracy}%</strong>)! Now, let's work on acceleration. If you can elevate your speed to <strong>${targetWpm} WPM</strong> while maintaining this precision, you will earn <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span>. Focus on keeping your hands relaxed.`;
+            } else if (wpm >= 60 && wpm < 90) {
+                const gain = speedUpXp - currentXp;
+                suggestion.innerHTML = `⚡ Great job! You are flying at <strong>${wpm} WPM</strong> with <strong>${accuracy}%</strong> accuracy. If you push your boundaries to reach <strong>${targetWpm} WPM</strong> with clean keystrokes, you will claim <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span> (a solid <strong>+${gain} XP</strong> increase). You've got this!`;
+            } else {
+                const gain = speedUpXp - currentXp;
+                suggestion.innerHTML = `👑 Elite typing! You clocked a blazing <strong>${wpm} WPM</strong> at <strong>${accuracy}%</strong> accuracy. If you challenge yourself to hit <strong>${targetWpm} WPM</strong> on your next run with this master precision, your score will soar to <span class="text-[var(--accent-primary)] font-bold">${speedUpXp} XP</span> (a <strong>+${gain} XP</strong> gain). Truly outstanding!`;
+            }
         }
     }
 

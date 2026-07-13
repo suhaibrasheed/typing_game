@@ -283,10 +283,36 @@
         SoundEngine.playSuccessSound();
 
         // Manage mistake bucket clearance if curriculum is mistakes
+        let mistakeSummary = null;
         if (gameState.curriculum === 'mistakes') {
             const uniqueWords = gameState.currentLevelData.wordsInGroup || [];
             const wrongWords = [...(gameState.wordsWithMistakes || [])];
             const clearedWords = uniqueWords.filter(w => !gameState.wordsWithMistakes.has(w));
+            
+            // Calculate graduated vs reduced using rawGroup metadata
+            const rawGroup = gameState.currentLevelData.rawGroup || [];
+            let graduatedCount = 0;
+            let reducedCount = 0;
+            
+            clearedWords.forEach(w => {
+                const record = rawGroup.find(item => item.word === w);
+                if (record) {
+                    if ((record.weight || 1) <= 1) {
+                        graduatedCount++;
+                    } else {
+                        reducedCount++;
+                    }
+                } else {
+                    graduatedCount++;
+                }
+            });
+            
+            mistakeSummary = {
+                graduated: graduatedCount,
+                reduced: reducedCount,
+                remaining: wrongWords.length
+            };
+            
             if (window.StorageDB) {
                 if (clearedWords.length > 0) StorageDB.removeMistakeWords(clearedWords).catch(e => console.error(e));
                 if (wrongWords.length > 0) StorageDB.addMistakeWords(wrongWords).catch(e => console.error(e));
@@ -295,7 +321,7 @@
 
         // Trigger global complete callback in main.js
         const event = new CustomEvent('typingGameComplete', {
-            detail: { wpm, accuracy, wordsTyped, won, levelId: gameState.currentLevelData.id, curriculum: gameState.curriculum }
+            detail: { wpm, accuracy, wordsTyped, won, levelId: gameState.currentLevelData.id, curriculum: gameState.curriculum, mistakeSummary }
         });
         window.dispatchEvent(event);
     }

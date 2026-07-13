@@ -45,6 +45,13 @@
 
         filtersContainer.innerHTML = '';
 
+        if (activeTab === 'mistakes') {
+            filtersContainer.classList.add('hidden');
+            return;
+        } else {
+            filtersContainer.classList.remove('hidden');
+        }
+
         if (activeTab === 'protyper') {
             protyperLevels.forEach(cat => {
                 const btn = document.createElement('button');
@@ -70,12 +77,6 @@
                 btn.dataset.category = catName;
                 filtersContainer.appendChild(btn);
             });
-        } else if (activeTab === 'mistakes') {
-            const btn = document.createElement('button');
-            btn.className = `level-tab-btn px-4 py-2 text-xs font-bold rounded-full transition bg-[var(--accent-primary)] text-white`;
-            btn.textContent = "Review Bucket";
-            btn.dataset.category = "Review";
-            filtersContainer.appendChild(btn);
         } else {
             const categories = ["All", "Basic", "Essay", "GS-1", "GS-2", "GS-3", "GS-4", "GeoOP"];
             categories.forEach(catName => {
@@ -178,7 +179,8 @@
                     text: lessonText,
                     curriculum: 'mistakes',
                     uniqueCount: group.length,
-                    wordsInGroup: wordsInGroup
+                    wordsInGroup: wordsInGroup,
+                    rawGroup: group
                 };
                 const button = document.createElement('button');
                 button.className = `level-btn p-5 rounded-2xl text-left transition duration-300 border flex flex-col justify-between group bg-secondary/40 backdrop-blur-md border-white/5 hover:border-[var(--accent-primary)] hover:shadow-[0_0_20px_rgba(129,140,248,0.15)] hover:-translate-y-1 cursor-pointer`;

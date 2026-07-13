@@ -51,6 +51,23 @@
 </head>
 <body class="p-4 sm:p-6 transition-all duration-300">
 
+    <!-- Beautiful Rebranded Splash Screen Overlay -->
+    <div id="app-splash-screen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 backdrop-blur-2xl transition-all duration-700 ease-in-out">
+        <div class="flex flex-col items-center max-w-xs w-full px-8 py-10 text-center bg-secondary/75 border border-white/10 rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.85),_0_0_50px_rgba(129,140,248,0.12)] backdrop-blur-xl transform scale-100 transition-all duration-500">
+            <!-- Neon Typing Animation Logo -->
+            <div class="relative mb-6 flex items-center justify-center w-20 h-20 bg-secondary/40 border border-white/10 rounded-2xl shadow-[0_0_30px_rgba(129,140,248,0.2)] animate-pulse">
+                <i class="fa-solid fa-keyboard text-4xl text-[var(--accent-primary)] animate-bounce" style="color: #818cf8;"></i>
+            </div>
+            
+            <h1 class="text-2xl font-normal font-['Pacifico'] text-[var(--accent-primary)] mb-8" style="color: #818cf8;">KashTyper</h1>
+            
+            <!-- Sleek Horizontal Loading Bar -->
+            <div class="w-48 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
+                <div id="splash-loading-bar" class="w-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500" style="transition: width 1800ms cubic-bezier(0.22, 1, 0.36, 1);"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Slim Glassmorphic Header Bar -->
     <header class="bg-secondary/40 backdrop-blur-xl border-b border-white/5 fixed top-0 left-0 right-0 z-50 px-4 py-1.5 shadow-2xl transition-all duration-300">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
