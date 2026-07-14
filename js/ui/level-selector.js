@@ -132,10 +132,10 @@
                 `;
                 return;
             }
-            // Group unique wrong words into sets of up to 37 words
+            // Group unique wrong words into sets of up to 30 words to keep lesson length around 100-140 words
             const chunks = [];
-            for (let i = 0; i < rawMistakes.length; i += 37) {
-                chunks.push(rawMistakes.slice(i, i + 37));
+            for (let i = 0; i < rawMistakes.length; i += 30) {
+                chunks.push(rawMistakes.slice(i, i + 30));
             }
             window.mistakesSessionsList = [];
             chunks.forEach((group, groupIdx) => {
@@ -153,8 +153,8 @@
                 const lessonWords = [];
                 const wordRepCounts = group.map(item => {
                     const weight = item.weight || 1;
-                    if (weight >= 5) return 6;
-                    if (weight >= 3) return 4;
+                    if (weight >= 5) return 5;
+                    if (weight >= 3) return 3;
                     return 2;
                 });
 

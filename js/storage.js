@@ -170,7 +170,7 @@
                 const getReq = store.get(wordClean);
                 getReq.onsuccess = () => {
                     const existing = getReq.result || { word: wordClean, weight: 0, streak: 0 };
-                    existing.weight = (existing.weight || 0) + 1;
+                    existing.weight = Math.min((existing.weight || 0) + 1, 6);
                     existing.streak = 0; // reset streak on mistake
                     existing.timestamp = Date.now();
                     const putReq = store.put(existing);
