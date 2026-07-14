@@ -132,10 +132,28 @@
                 `;
                 return;
             }
-            // Group unique wrong words into sets of up to 30 words to keep lesson length around 100-140 words
+            // Group unique wrong words dynamically so the total typed words per lesson is always between 60 and 85 words
             const chunks = [];
-            for (let i = 0; i < rawMistakes.length; i += 30) {
-                chunks.push(rawMistakes.slice(i, i + 30));
+            let currentChunk = [];
+            let currentRepsSum = 0;
+
+            for (let i = 0; i < rawMistakes.length; i++) {
+                const item = rawMistakes[i];
+                const weight = item.weight || 1;
+                let reps = 2;
+                if (weight >= 5) reps = 5;
+                else if (weight >= 3) reps = 3;
+
+                if (currentChunk.length > 0 && currentRepsSum + reps > 85) {
+                    chunks.push(currentChunk);
+                    currentChunk = [];
+                    currentRepsSum = 0;
+                }
+                currentChunk.push(item);
+                currentRepsSum += reps;
+            }
+            if (currentChunk.length > 0) {
+                chunks.push(currentChunk);
             }
             window.mistakesSessionsList = [];
             chunks.forEach((group, groupIdx) => {
