@@ -230,20 +230,20 @@
 
             uniqueCleanWords.forEach(wordClean => {
                 const getReq = store.get(wordClean);
-                getReq.onsuccess = () => {
+                 getReq.onsuccess = () => {
                     const existing = getReq.result;
                     if (existing) {
                         const currentWeight = existing.weight || 1;
-                        if (currentWeight <= 1) {
-                            // Graduate word - delete it entirely since error count hit 0
+                        if (currentWeight - 2 <= 1) {
+                            // Graduate word - delete it entirely since error count drops to 1 or less
                             const delReq = store.delete(wordClean);
                             delReq.onsuccess = delReq.onerror = () => {
                                 completed++;
                                 if (completed === uniqueCleanWords.length) resolve();
                             };
                         } else {
-                            // Reduce weight by 1
-                            existing.weight = currentWeight - 1;
+                            // Reduce weight by 2, making it faster to graduate mistakes
+                            existing.weight = currentWeight - 2;
                             existing.streak = (existing.streak || 0) + 1;
                             const putReq = store.put(existing);
                             putReq.onsuccess = putReq.onerror = () => {

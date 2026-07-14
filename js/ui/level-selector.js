@@ -140,9 +140,9 @@
             for (let i = 0; i < rawMistakes.length; i++) {
                 const item = rawMistakes[i];
                 const weight = item.weight || 1;
-                let reps = 2;
-                if (weight >= 5) reps = 5;
-                else if (weight >= 3) reps = 3;
+                let reps = 3;
+                if (weight >= 5) reps = 6;
+                else if (weight >= 3) reps = 4;
 
                 if (currentChunk.length > 0 && currentRepsSum + reps > 85) {
                     chunks.push(currentChunk);
@@ -171,9 +171,9 @@
                 const lessonWords = [];
                 const wordRepCounts = group.map(item => {
                     const weight = item.weight || 1;
-                    if (weight >= 5) return 5;
-                    if (weight >= 3) return 3;
-                    return 2;
+                    if (weight >= 5) return 6;
+                    if (weight >= 3) return 4;
+                    return 3;
                 });
 
                 const maxReps = Math.max(...wordRepCounts);
@@ -326,7 +326,72 @@
         });
     }
 
+    async function getLatestMistakeLevelData(groupIdx) {
+        const rawMistakes = window.StorageDB && window.StorageDB.getMistakeWordsRaw ? await StorageDB.getMistakeWordsRaw() : [];
+        if (rawMistakes.length === 0) return null;
+        
+        const chunks = [];
+        let currentChunk = [];
+        let currentRepsSum = 0;
+
+        for (let i = 0; i < rawMistakes.length; i++) {
+            const item = rawMistakes[i];
+            const weight = item.weight || 1;
+            let reps = 3;
+            if (weight >= 5) reps = 6;
+            else if (weight >= 3) reps = 4;
+
+            if (currentChunk.length > 0 && currentRepsSum + reps > 85) {
+                chunks.push(currentChunk);
+                currentChunk = [];
+                currentRepsSum = 0;
+            }
+            currentChunk.push(item);
+            currentRepsSum += reps;
+        }
+        if (currentChunk.length > 0) {
+            chunks.push(currentChunk);
+        }
+        
+        const group = chunks[groupIdx];
+        if (!group) return null;
+        
+        const lessonWords = [];
+        const wordRepCounts = group.map(item => {
+            const weight = item.weight || 1;
+            if (weight >= 5) return 6;
+            if (weight >= 3) return 4;
+            return 3;
+        });
+
+        const maxReps = Math.max(...wordRepCounts);
+        for (let r = 0; r < maxReps; r++) {
+            const activeWordsInRound = [];
+            group.forEach((item, idx) => {
+                if (r < wordRepCounts[idx]) {
+                    activeWordsInRound.push(item.word);
+                }
+            });
+            const shuffled = [...activeWordsInRound].sort(() => Math.random() - 0.5);
+            lessonWords.push(...shuffled);
+        }
+
+        const lessonText = lessonWords.join(' ');
+        const wordsInGroup = group.map(item => item.word);
+
+        return {
+            id: groupIdx,
+            name: `Precision Training ${groupIdx + 1}`,
+            text: lessonText,
+            curriculum: 'mistakes',
+            uniqueCount: group.length,
+            wordsInGroup: wordsInGroup,
+            rawGroup: group
+        };
+    }
+
     window.LevelSelectorUI = {
-        renderLevelSelector
+        renderLevelSelector,
+        getLatestMistakeLevelData
     };
 })();

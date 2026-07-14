@@ -531,7 +531,7 @@
             }
         });
 
-        DOMElements.levelGrid().addEventListener('click', (e) => {
+        DOMElements.levelGrid().addEventListener('click', async (e) => {
             const btn = e.target.closest('.level-btn');
             if (btn) {
                 SoundEngine.playTapSound();
@@ -541,7 +541,7 @@
                 // Gather correct level details from correct array
                 let levelData = null;
                 if (tab === 'mistakes') {
-                    levelData = window.mistakesSessionsList[levelId];
+                    levelData = await window.LevelSelectorUI.getLatestMistakeLevelData(levelId);
                 } else if (tab === 'protyper') {
                     const flat = PROTYPER_LEVELS.flatMap(c => c.levels);
                     levelData = flat[levelId];
@@ -586,11 +586,11 @@
         const validRuns = runs.filter(r => r.accuracy >= 90);
         const previousBestWpm = validRuns.length > 0 ? Math.max(...validRuns.map(r => r.wpm)) : 0;
 
-        const handleRetry = () => {
+        const handleRetry = async () => {
             const tab = curriculum;
             let levelData = null;
             if (tab === 'mistakes') {
-                levelData = window.mistakesSessionsList[levelId];
+                levelData = await window.LevelSelectorUI.getLatestMistakeLevelData(levelId);
             } else if (tab === 'protyper') {
                 const flat = PROTYPER_LEVELS.flatMap(c => c.levels);
                 levelData = flat[levelId];
@@ -614,13 +614,16 @@
             GameEngine.startGame(levelData, tab, appState.profile, bestWpm);
         };
 
-        const handleNext = () => {
+        const handleNext = async () => {
             const nextId = levelId + 1;
             const tab = curriculum;
             let levelData = null;
             let exists = false;
 
-            if (tab === 'protyper') {
+            if (tab === 'mistakes') {
+                levelData = await window.LevelSelectorUI.getLatestMistakeLevelData(nextId);
+                exists = !!levelData;
+            } else if (tab === 'protyper') {
                 const flat = PROTYPER_LEVELS.flatMap(c => c.levels);
                 levelData = flat[nextId];
                 exists = !!levelData;
@@ -633,7 +636,9 @@
             }
 
             if (exists && levelData) {
-                levelData.id = nextId;
+                if (tab !== 'mistakes') {
+                    levelData.id = nextId;
+                }
                 const rKey = `${tab}_${nextId}`;
                 const rList = appState.runsStats[rKey] || [];
                 const vRuns = rList.filter(r => r.accuracy >= 90);
