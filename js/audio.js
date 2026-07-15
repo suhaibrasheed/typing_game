@@ -10,9 +10,9 @@
                 { name: 'Calm', icon: '☀️', params: { type: 'sine', freq: 600, vol: 0.05, len: 0.15, random: 100 } },
                 { name: 'Water', icon: '💧', params: { type: 'sine', freq: 1200, vol: 0.03, len: 0.05, random: 300 } },
                 { name: 'Laser', icon: '⚡', params: { type: 'square', freq: 1000, vol: 0.02, len: 0.08, random: 100 } },
+                { name: 'Mechanical Clicky', icon: '🎹', params: { freq: 400, vol: 0.05, len: 0.07, random: 50 } },
                 { name: 'Bubble', icon: '🧼', params: { type: 'sine', freq: 400, vol: 0.06, len: 0.1, random: 50 } },
                 { name: 'Wind', icon: '💨', params: { type: 'sine', freq: 200, vol: 0.04, len: 0.2, random: 100 } },
-                { name: 'Bird', icon: '🐦', params: { type: 'sine', freq: 1500, vol: 0.03, len: 0.07, random: 500 } },
                 { name: 'Synth', icon: '🎶', params: { type: 'sawtooth', freq: 500, vol: 0.03, len: 0.12, random: 150 } },
                 { name: 'Bell', icon: '🔔', params: { type: 'sine', freq: 2000, vol: 0.04, len: 0.1, random: 200 } },
                 { name: 'Pirate', icon: '🏴‍☠️', params: { type: 'square', vol: 0.03, len: 0.15, melody: [587, 698, 783, 783, 880, 987, 987, 1046, 987, 783, 698, 783] } },
@@ -40,12 +40,46 @@
             const sound = this.sounds.find(s => s.name === soundName);
             if (!sound) return;
 
+            // Get live typing speed (WPM) to scale pitch
+            const wpmEl = document.getElementById('game-wpm') || document.getElementById('exam-wpm');
+            const wpm = wpmEl ? parseInt(wpmEl.textContent) || 0 : 0;
+            // Pitch multiplier ranges from 1.0 (at 0 WPM) up to 1.3 (at 120+ WPM)
+            const speedMultiplier = 1.0 + Math.min(0.3, wpm / 400);
+
             let freq;
             if (sound.params.melody) {
-                freq = sound.params.melody[this.melodyIndex % sound.params.melody.length];
+                freq = sound.params.melody[this.melodyIndex % sound.params.melody.length] * speedMultiplier;
                 this.melodyIndex++;
             } else {
-                freq = sound.params.freq + (Math.random() - 0.5) * (sound.params.random || 0);
+                freq = (sound.params.freq + (Math.random() - 0.5) * (sound.params.random || 0)) * speedMultiplier;
+            }
+
+            if (soundName === 'Mechanical Clicky') {
+                // Synthesize a mechanical keyboard switch sound:
+                // 1. High frequency metallic tick (simulates key click contact)
+                const oscClick = this.audioCtx.createOscillator();
+                const gainClick = this.audioCtx.createGain();
+                oscClick.type = 'triangle';
+                oscClick.frequency.setValueAtTime(freq * 2.5, this.audioCtx.currentTime);
+                gainClick.gain.setValueAtTime(0.04, this.audioCtx.currentTime);
+                gainClick.gain.exponentialRampToValueAtTime(0.00001, this.audioCtx.currentTime + 0.015);
+                oscClick.connect(gainClick);
+                gainClick.connect(this.audioCtx.destination);
+                oscClick.start(this.audioCtx.currentTime);
+                oscClick.stop(this.audioCtx.currentTime + 0.015);
+
+                // 2. Low-mid thud (simulates bottoming out)
+                const oscThud = this.audioCtx.createOscillator();
+                const gainThud = this.audioCtx.createGain();
+                oscThud.type = 'sine';
+                oscThud.frequency.setValueAtTime(freq * 0.4, this.audioCtx.currentTime);
+                gainThud.gain.setValueAtTime(0.06, this.audioCtx.currentTime);
+                gainThud.gain.exponentialRampToValueAtTime(0.00001, this.audioCtx.currentTime + 0.06);
+                oscThud.connect(gainThud);
+                gainThud.connect(this.audioCtx.destination);
+                oscThud.start(this.audioCtx.currentTime);
+                oscThud.stop(this.audioCtx.currentTime + 0.06);
+                return;
             }
 
             const osc = this.audioCtx.createOscillator();

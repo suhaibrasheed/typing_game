@@ -89,6 +89,35 @@
         coachTextEl.textContent = recommendation;
     }
 
+    function applyHeatmapStyle(element, latency) {
+        if (!latency) {
+            element.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+            element.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+            element.style.color = 'var(--text-secondary)';
+            element.style.boxShadow = 'none';
+            element.title = 'No latency data recorded yet';
+            return;
+        }
+
+        element.title = `Average delay: ${Math.round(latency)}ms`;
+        if (latency < 200) {
+            element.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+            element.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+            element.style.color = '#34d399';
+            element.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.2)';
+        } else if (latency < 320) {
+            element.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
+            element.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+            element.style.color = '#fbbf24';
+            element.style.boxShadow = '0 0 8px rgba(245, 158, 11, 0.2)';
+        } else {
+            element.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+            element.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+            element.style.color = '#f87171';
+            element.style.boxShadow = '0 0 8px rgba(239, 68, 68, 0.2)';
+        }
+    }
+
     function renderKeyboardHeatmap(latencies) {
         const container = document.getElementById('dash-keyboard-heatmap');
         if (!container) return;
@@ -109,23 +138,7 @@
                 const charKey = keyChar.toLowerCase();
                 const latency = latencies[charKey];
 
-                if (latency) {
-                    keyEl.title = `Average delay: ${latency}ms`;
-                    if (latency < 180) {
-                        keyEl.style.backgroundColor = '#15803d'; // Green
-                        keyEl.style.color = '#fff';
-                    } else if (latency < 280) {
-                        keyEl.style.backgroundColor = '#d97706'; // Yellow/Orange
-                        keyEl.style.color = '#fff';
-                    } else {
-                        keyEl.style.backgroundColor = '#b91c1c'; // Red
-                        keyEl.style.color = '#fff';
-                    }
-                } else {
-                    keyEl.style.backgroundColor = 'var(--bg-tertiary)';
-                    keyEl.title = 'No latency data recorded yet';
-                }
-
+                applyHeatmapStyle(keyEl, latency);
                 rowEl.appendChild(keyEl);
             });
 
@@ -140,21 +153,7 @@
         spaceKey.textContent = 'SPACE';
         
         const spaceLatency = latencies[' '];
-        if (spaceLatency) {
-            spaceKey.title = `Average delay: ${spaceLatency}ms`;
-            if (spaceLatency < 180) {
-                spaceKey.style.backgroundColor = '#15803d';
-                spaceKey.style.color = '#fff';
-            } else if (spaceLatency < 280) {
-                spaceKey.style.backgroundColor = '#d97706';
-                spaceKey.style.color = '#fff';
-            } else {
-                spaceKey.style.backgroundColor = '#b91c1c';
-                spaceKey.style.color = '#fff';
-            }
-        } else {
-            spaceKey.style.backgroundColor = 'var(--bg-tertiary)';
-        }
+        applyHeatmapStyle(spaceKey, spaceLatency);
         
         spaceRow.appendChild(spaceKey);
         board.appendChild(spaceRow);

@@ -211,6 +211,16 @@
             caret.style.left = `${charSpan.offsetLeft}px`;
             caret.style.top = `${charSpan.offsetTop}px`;
             caret.style.height = `${charSpan.offsetHeight}px`;
+            
+            // Toggle active-char class for the current typing character
+            charSpans.forEach((span, i) => {
+                if (i === index) {
+                    span.classList.add('active-char');
+                } else {
+                    span.classList.remove('active-char');
+                }
+            });
+
             // Scroll smoothly only when active line (offsetTop) changes
             if (charSpan.offsetTop !== gameState.lastOffsetTop) {
                 gameState.lastOffsetTop = charSpan.offsetTop;

@@ -4,9 +4,9 @@
         profile: null,
         attempts: [],
         runsStats: {}, // grouped runs per level id: { protyper_0: [...], upsc_0: [...] }
-        activeTab: 'protyper', // protyper or upsc
-        activeCategory: 'Basic', // Basic, Intermediate, Advanced, etc.
-        activeView: 'exam' // exam, dashboard or practice
+        activeTab: 'mistakes', // protyper or upsc
+        activeCategory: 'Review', // Basic, Intermediate, Advanced, etc.
+        activeView: 'practice' // exam, dashboard or practice
     };
 
     const DOMElements = {
@@ -86,6 +86,7 @@
                 onHistoryChanged: renderExamHistory
             });
             ModalsUI.setupModalCloseListeners();
+            initManualPassages();
             
             GameScreenUI.initGameScreenHandlers(() => {
                 GameEngine.abortGame();
@@ -93,7 +94,7 @@
             });
 
             // Initialize default view
-            switchView('exam');
+            switchView('practice');
             
             console.log("ProTyper SPA Engine Loaded.");
         } catch (e) {
@@ -719,6 +720,178 @@
             ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, null);
         }
     });
+
+    function initManualPassages() {
+        const manualPassageBtn = document.getElementById('manual-passage-btn');
+        if (!manualPassageBtn) return;
+
+        const modal = document.getElementById('manual-passage-modal');
+        const tabLibraryBtn = document.getElementById('manual-tab-library-btn');
+        const tabNewBtn = document.getElementById('manual-tab-new-btn');
+        const viewLibrary = document.getElementById('manual-view-library');
+        const viewNew = document.getElementById('manual-view-new');
+        const libraryList = document.getElementById('manual-library-list');
+        const pasteBtn = document.getElementById('manual-paste-btn');
+        const saveBtn = document.getElementById('manual-save-btn');
+        const startBtn = document.getElementById('manual-start-btn');
+        const inputTitle = document.getElementById('manual-input-title');
+        const inputText = document.getElementById('manual-input-text');
+
+        // Render library list
+        async function renderLibrary() {
+            if (!libraryList) return;
+            libraryList.innerHTML = '';
+            const passages = await StorageDB.getManualPassages();
+
+            if (passages.length === 0) {
+                libraryList.innerHTML = `
+                    <div class="text-center py-8 text-secondary font-medium text-xs">
+                        <i class="fa-solid fa-folder-open text-2xl mb-2 opacity-50 block"></i>
+                        No custom passages saved yet.
+                    </div>
+                `;
+                return;
+            }
+
+            passages.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'manual-passage-item';
+                
+                const wordCount = p.text.trim().split(/\s+/).filter(Boolean).length;
+                const date = new Date(p.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+                item.innerHTML = `
+                    <div class="manual-passage-info">
+                        <span class="manual-passage-title">${escapeHTML(p.title)}</span>
+                        <span class="manual-passage-meta">${date} · ${wordCount} words</span>
+                    </div>
+                    <div class="manual-passage-actions">
+                        <button class="manual-action-btn play" title="Start exam with this passage" type="button">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <button class="manual-action-btn delete" title="Delete passage" type="button">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+
+                // Bind actions
+                item.querySelector('.play').addEventListener('click', () => {
+                    SoundEngine.playTapSound();
+                    ModalsUI.hideModal('manual-passage-modal');
+                    window.ExamEngine.start(p);
+                });
+
+                item.querySelector('.delete').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    SoundEngine.playTapSound();
+                    await StorageDB.deleteManualPassage(p.id);
+                    showToast('Passage deleted');
+                    renderLibrary();
+                });
+
+                libraryList.appendChild(item);
+            });
+        }
+
+        function escapeHTML(value) {
+            const node = document.createElement('span');
+            node.textContent = String(value);
+            return node.innerHTML;
+        }
+
+        // Open Modal
+        manualPassageBtn.addEventListener('click', () => {
+            SoundEngine.playTapSound();
+            ModalsUI.showModal('manual-passage-modal');
+            // Reset to Library Tab
+            switchTab('library');
+            renderLibrary();
+        });
+
+        // Tab Switching
+        function switchTab(tab) {
+            if (tab === 'library') {
+                tabLibraryBtn.className = 'flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-[var(--accent-primary)] text-primary';
+                tabNewBtn.className = 'flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-secondary hover:text-primary transition';
+                viewLibrary.classList.remove('hidden');
+                viewNew.classList.add('hidden');
+            } else {
+                tabNewBtn.className = 'flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-[var(--accent-primary)] text-primary';
+                tabLibraryBtn.className = 'flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-secondary hover:text-primary transition';
+                viewNew.classList.remove('hidden');
+                viewLibrary.classList.add('hidden');
+            }
+        }
+
+        tabLibraryBtn.addEventListener('click', () => { SoundEngine.playTapSound(); switchTab('library'); });
+        tabNewBtn.addEventListener('click', () => { SoundEngine.playTapSound(); switchTab('new'); });
+
+        // Clipboard Paste
+        pasteBtn.addEventListener('click', async () => {
+            SoundEngine.playTapSound();
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    inputText.value = text;
+                    showToast('Pasted from clipboard');
+                } else {
+                    showToast('Clipboard is empty', { warning: true });
+                }
+            } catch (err) {
+                showToast('Clipboard access denied. Please use Ctrl+V/Cmd+V.', { warning: true });
+            }
+        });
+
+        // Save to Library
+        saveBtn.addEventListener('click', async () => {
+            SoundEngine.playTapSound();
+            const text = inputText.value.trim();
+            let title = inputTitle.value.trim();
+            if (!text) {
+                showToast('Please enter some text first', { warning: true });
+                return;
+            }
+            if (!title) {
+                title = `Custom Passage - ${new Date().toLocaleDateString()}`;
+            }
+
+            await StorageDB.saveManualPassage({ title, text });
+            showToast('Passage saved to library');
+            
+            // Reset fields
+            inputTitle.value = '';
+            inputText.value = '';
+            
+            switchTab('library');
+            renderLibrary();
+        });
+
+        // Done & Start
+        startBtn.addEventListener('click', async () => {
+            SoundEngine.playTapSound();
+            const text = inputText.value.trim();
+            let title = inputTitle.value.trim();
+            if (!text) {
+                showToast('Please enter some text first', { warning: true });
+                return;
+            }
+            if (!title) {
+                title = `Custom Passage - ${new Date().toLocaleDateString()}`;
+            }
+
+            // Save to DB for future use
+            const id = await StorageDB.saveManualPassage({ title, text });
+            
+            // Start exam mode
+            ModalsUI.hideModal('manual-passage-modal');
+            window.ExamEngine.start({ id, title, text });
+            
+            // Clear fields for next time
+            inputTitle.value = '';
+            inputText.value = '';
+        });
+    }
 
     window.syncDataAndDrawUI = syncDataAndDrawUI;
 })();

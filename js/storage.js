@@ -1,6 +1,6 @@
 (function() {
     const DB_NAME = "ProTyperUltimateDB";
-    const DB_VERSION = 4;
+    const DB_VERSION = 5;
     let dbInstance = null;
 
     function initDB() {
@@ -70,6 +70,11 @@
                 // 5. mistakes_bucket store (tracks mistyped words)
                 if (!db.objectStoreNames.contains("mistakes_bucket")) {
                     db.createObjectStore("mistakes_bucket", { keyPath: "word" });
+                }
+
+                // 6. manual_passages store
+                if (!db.objectStoreNames.contains("manual_passages")) {
+                    db.createObjectStore("manual_passages", { keyPath: "id", autoIncrement: true });
                 }
             };
         });
@@ -313,6 +318,39 @@
             request.onerror = () => resolve([]);
         });
     }
+    function saveManualPassage(passage) {
+        return new Promise((resolve, reject) => {
+            const store = getStore("manual_passages", "readwrite");
+            const request = store.add({
+                ...passage,
+                timestamp: Date.now()
+            });
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    function getManualPassages() {
+        return new Promise((resolve) => {
+            const store = getStore("manual_passages", "readonly");
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const results = request.result || [];
+                results.sort((a, b) => b.timestamp - a.timestamp);
+                resolve(results);
+            };
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    function deleteManualPassage(id) {
+        return new Promise((resolve, reject) => {
+            const store = getStore("manual_passages", "readwrite");
+            const request = store.delete(id);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
 
     window.StorageDB = {
         initDB,
@@ -328,6 +366,9 @@
         addMistakeWords,
         getMistakeWords,
         getMistakeWordsRaw,
-        removeMistakeWords
+        removeMistakeWords,
+        saveManualPassage,
+        getManualPassages,
+        deleteManualPassage
     };
 })();

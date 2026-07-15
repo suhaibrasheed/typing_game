@@ -230,21 +230,30 @@
         }
     }
 
-    function start() {
-        const passages = PASSAGE_LIBRARY[selectedDifficulty];
-        if (!passages || !passages.length) return;
-        const seed = Math.floor(Math.random() * passages.length);
-        const targetCharacters = Math.ceil((selectedDuration / 60) * 135 * 5) + 1000;
-        let sourceText = '', offset = 0;
-        while (sourceText.length < targetCharacters) {
-            const rawText = passages[(seed + offset) % passages.length].text;
-            const shuffledText = shuffleSentences(rawText);
-            sourceText += (sourceText ? '\n\n' : '') + shuffledText;
-            offset++;
+    function start(customPassage = null) {
+        if (customPassage) {
+            passage = { title: customPassage.title, text: customPassage.text };
+        } else {
+            const passages = PASSAGE_LIBRARY[selectedDifficulty];
+            if (!passages || !passages.length) return;
+            const seed = Math.floor(Math.random() * passages.length);
+            const targetCharacters = Math.ceil((selectedDuration / 60) * 135 * 5) + 1000;
+            let sourceText = '', offset = 0;
+            while (sourceText.length < targetCharacters) {
+                const rawText = passages[(seed + offset) % passages.length].text;
+                const shuffledText = shuffleSentences(rawText);
+                sourceText += (sourceText ? '\n\n' : '') + shuffledText;
+                offset++;
+            }
+            passage = { title: passages[seed].title, text: sourceText };
         }
-        passage = { title: passages[seed].title, text: sourceText };
         remaining = selectedDuration; elapsed = 0; running = true;
-        $('exam-passage-title').textContent = `${selectedExam} · ${selectedDifficulty} · ${passage.title}`;
+        
+        if (customPassage) {
+            $('exam-passage-title').textContent = `${selectedExam} · Custom · ${passage.title}`;
+        } else {
+            $('exam-passage-title').textContent = `${selectedExam} · ${selectedDifficulty} · ${passage.title}`;
+        }
         
         // Tokenize and build HTML with spans
         const words = passage.text.split(/(\s+)/);
@@ -626,5 +635,5 @@
             }
         }
     }
-    window.ExamEngine = { init, renderHistory, calculate, evaluateText, updateProfile };
+    window.ExamEngine = { init, renderHistory, calculate, evaluateText, updateProfile, start };
 })();

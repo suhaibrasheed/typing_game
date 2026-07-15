@@ -259,18 +259,24 @@
                             <button id="exam-info-btn" class="exam-info-button" type="button">Tell me more <span>↗</span></button>
                             <h2><span id="exam-hub-exam-name">JKSSB Junior Assistant</span><br>Typing Simulator</h2>
                             <p>Train under real test constraints with official-style evaluation, restricted correction and an auditable score out of 20.</p>
-                            <div class="custom-exam-dropdown">
-                                <button id="exam-dropdown-btn" class="exam-dropdown-button" type="button">
-                                    What's ur Exam?
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m7 10 5 5 5-5"/></svg>
-                                </button>
-                                <div id="exam-dropdown-menu" class="exam-dropdown-menu">
-                                    <div class="exam-dropdown-item active" data-value="JKSSB Junior Assistant">JKSSB Junior Assistant</div>
-                                    <div class="exam-dropdown-item" data-value="SSC CGL">SSC CGL</div>
-                                    <div class="exam-dropdown-item" data-value="SSC CHSL">SSC CHSL</div>
-                                    <div class="exam-dropdown-item" data-value="RRB NTPC">RRB NTPC</div>
-                                    <div class="exam-dropdown-item" data-value="High Court Typist">High Court Typist</div>
+                            <div class="flex items-center gap-3 mt-5 mb-3 flex-wrap">
+                                <div class="custom-exam-dropdown mt-0 mb-0">
+                                    <button id="exam-dropdown-btn" class="exam-dropdown-button" type="button">
+                                        What's ur Exam?
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m7 10 5 5 5-5"/></svg>
+                                    </button>
+                                    <div id="exam-dropdown-menu" class="exam-dropdown-menu">
+                                        <div class="exam-dropdown-item active" data-value="JKSSB Junior Assistant">JKSSB Junior Assistant</div>
+                                        <div class="exam-dropdown-item" data-value="SSC CGL">SSC CGL</div>
+                                        <div class="exam-dropdown-item" data-value="SSC CHSL">SSC CHSL</div>
+                                        <div class="exam-dropdown-item" data-value="RRB NTPC">RRB NTPC</div>
+                                        <div class="exam-dropdown-item" data-value="High Court Typist">High Court Typist</div>
+                                    </div>
                                 </div>
+                                <button id="manual-passage-btn" class="exam-manual-button animate-fade-in" type="button">
+                                    <i class="fa-solid fa-file-pen text-[0.8rem]"></i>
+                                    Manual
+                                </button>
                             </div>
                             <div class="exam-standard-pills">
                                 <span><strong>35</strong> Net WPM</span>
@@ -514,6 +520,60 @@
             <button id="rank-up-continue" class="btn btn-primary mt-6 w-full opacity-0" style="animation: fade-in 0.4s ease-out 1s forwards">
                 Continue Journey
             </button>
+        </div>
+    </div>
+
+    <!-- G. Manual Passage Modal -->
+    <div id="manual-passage-modal" class="modal-container">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content relative max-w-3xl overflow-hidden">
+            <button class="modal-close" aria-label="Close modal">&times;</button>
+            <h3 class="text-xl font-black text-primary mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-book-open text-lg text-[var(--accent-primary)]"></i>
+                Custom Passages
+            </h3>
+            
+            <!-- Tab headers -->
+            <div class="flex border-b border-white/10 mb-5">
+                <button id="manual-tab-library-btn" class="flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-[var(--accent-primary)] text-primary">
+                    Library
+                </button>
+                <button id="manual-tab-new-btn" class="flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-secondary hover:text-primary transition">
+                    New Passage
+                </button>
+            </div>
+            
+            <!-- Library View -->
+            <div id="manual-view-library" class="space-y-4">
+                <div id="manual-library-list" class="max-h-[420px] overflow-y-auto space-y-3 pr-1">
+                    <!-- Dynamic library list elements go here -->
+                </div>
+            </div>
+            
+            <!-- New Passage View -->
+            <div id="manual-view-new" class="hidden space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-[0.65rem] font-bold text-secondary uppercase tracking-widest text-left block">Passage Title</label>
+                    <input type="text" id="manual-input-title" placeholder="e.g. Custom Practice #1" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-primary font-bold focus:outline-none focus:border-[var(--accent-primary)] transition">
+                </div>
+                <div class="space-y-1.5 relative">
+                    <label class="text-[0.65rem] font-bold text-secondary uppercase tracking-widest text-left block">Passage Content</label>
+                    <div class="relative">
+                        <textarea id="manual-input-text" rows="12" placeholder="Paste or write your custom text here..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-primary leading-relaxed focus:outline-none focus:border-[var(--accent-primary)] transition resize-none"></textarea>
+                        <button id="manual-paste-btn" class="absolute right-3.5 bottom-3.5 bg-white/10 hover:bg-white/20 text-white rounded-lg p-2 transition flex items-center justify-center" title="Paste from clipboard" type="button">
+                            <i class="fa-solid fa-clipboard text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button id="manual-save-btn" class="btn btn-secondary w-full text-xs py-2.5 font-extrabold uppercase" type="button">
+                        Save to Library
+                    </button>
+                    <button id="manual-start-btn" class="btn btn-primary w-full text-xs py-2.5 font-extrabold uppercase" type="button">
+                        Done & Start
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

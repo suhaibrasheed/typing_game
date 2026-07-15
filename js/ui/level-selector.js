@@ -17,6 +17,11 @@
 
         tabsContainer.innerHTML = `
             <button class="px-6 py-3 font-extrabold text-sm border-b-2 transition flex items-center shrink-0 whitespace-nowrap ${
+                activeTab === 'mistakes'
+                ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
+                : 'border-transparent text-secondary hover:text-primary'
+            }" data-tab="mistakes">${targetIcon} Mistakes</button>
+            <button class="px-6 py-3 font-extrabold text-sm border-b-2 transition flex items-center shrink-0 whitespace-nowrap ${
                 activeTab === 'protyper'
                 ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
                 : 'border-transparent text-secondary hover:text-primary'
@@ -31,11 +36,6 @@
                 ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
                 : 'border-transparent text-secondary hover:text-primary'
             }" data-tab="jkssb">${briefIcon} JKSSB FAA Prep</button>
-            <button class="px-6 py-3 font-extrabold text-sm border-b-2 transition flex items-center shrink-0 whitespace-nowrap ${
-                activeTab === 'mistakes'
-                ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
-                : 'border-transparent text-secondary hover:text-primary'
-            }" data-tab="mistakes">${targetIcon} Mistakes</button>
         `;
     }
 
