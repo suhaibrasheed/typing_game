@@ -89,7 +89,6 @@
         });
 
         $('start-exam-btn').addEventListener('click', () => start());
-        $('exam-reset-btn').addEventListener('click', requestReset);
         $('exam-cancel-btn').addEventListener('click', cancel);
         $('exam-submit-btn').addEventListener('click', () => finish(false));
         $('exam-result-close').addEventListener('click', closeResult);
@@ -99,6 +98,15 @@
         $('exam-response').addEventListener('paste', event => event.preventDefault());
         $('exam-confirm-stay').addEventListener('click', closeConfirmation);
         $('exam-confirm-proceed').addEventListener('click', confirmPendingAction);
+
+        const closeInfoModal = () => {
+            $('exam-info-modal').classList.remove('active');
+        };
+        $('exam-guide-btn').addEventListener('click', () => {
+            $('exam-info-modal').classList.add('active');
+        });
+        $('exam-info-modal-close').addEventListener('click', closeInfoModal);
+        $('exam-info-modal-ok').addEventListener('click', closeInfoModal);
         
         // Custom exam selection dropdown
         const dropBtn = $('exam-dropdown-btn');
@@ -635,16 +643,9 @@
     function confirmPendingAction() {
         const action = pendingConfirmation;
         closeConfirmation();
-        if (action === 'reset') {
-            $('exam-response').value = '';
-            updateWordCount();
-        } else if (action === 'cancel') {
+        if (action === 'cancel') {
             running = false; clearInterval(intervalId); closeConsole();
         }
-    }
-    function requestReset() {
-        if (!running || !$('exam-response').value) return;
-        showConfirmation('reset', 'Reset your response?', 'Everything typed so far will be cleared. Your timer will continue running.', 'Reset response');
     }
     function cancel() {
         if (!running) { closeConsole(); return; }

@@ -524,6 +524,37 @@
         </div>
     </div>
 
+    <!-- Exam Instructions Info Modal -->
+    <div id="exam-info-modal" class="modal-container" style="z-index: 99999;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content relative max-w-md" style="text-align: left;">
+            <button id="exam-info-modal-close" class="modal-close" aria-label="Close modal">&times;</button>
+            <h3 class="text-xl font-black text-primary mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-[var(--accent-primary)]"></i>
+                Exam Guidelines & Tips
+            </h3>
+            <div class="space-y-3.5 text-sm text-secondary leading-relaxed">
+                <div class="p-3 bg-secondary/30 rounded-xl border border-[var(--border-color)]">
+                    <p class="font-bold text-[var(--accent-secondary)] uppercase text-xs tracking-wider mb-1">Typing Constraints</p>
+                    <p class="text-xs">Type the passage exactly as shown. Backspace works only within the current word. You cannot edit previously typed words once you press space.</p>
+                </div>
+                <div class="p-3 bg-secondary/30 rounded-xl border border-[var(--border-color)]">
+                    <p class="font-bold text-[var(--accent-secondary)] uppercase text-xs tracking-wider mb-1">Evaluation & Mistakes</p>
+                    <p class="text-xs">Omitted, extra, or misspelled words count as full mistakes. Capitalization or punctuation errors count as half mistakes.</p>
+                </div>
+                <div class="p-3 bg-secondary/30 rounded-xl border border-[var(--border-color)]">
+                    <p class="font-bold text-[var(--accent-secondary)] uppercase text-xs tracking-wider mb-1">Tips for a High Score</p>
+                    <ul class="list-disc list-inside text-xs space-y-1.5 mt-1 text-secondary">
+                        <li><strong>Focus on flow:</strong> Keep your finger momentum going and minimize average pause and max pause between words.</li>
+                        <li><strong>Stay precise:</strong> Maintain your accuracy beyond 95% for a successful qualifying run.</li>
+                        <li><strong>Focus on the current word:</strong> Intensely watch the word you are typing now to avoid typos and gain speed.</li>
+                    </ul>
+                </div>
+            </div>
+            <button id="exam-info-modal-ok" class="btn btn-primary w-full mt-5">Got it</button>
+        </div>
+    </div>
+
     <!-- E. Rank Up celebration screen -->
     <div id="rank-up-modal" class="modal-container flex-col">
         <div class="modal-backdrop"></div>
@@ -644,7 +675,7 @@
     <!-- Full-screen JKSSB examination console -->
     <section id="exam-console" class="exam-console hidden" aria-hidden="true">
         <header class="exam-console-header">
-            <div>
+            <div style="display: flex; flex-direction: column;">
                 <p id="exam-console-exam-name" class="exam-kicker">JKSSB Junior Assistant</p>
                 <h1>Real Exam Simulation</h1>
             </div>
@@ -659,9 +690,6 @@
             </div>
         </header>
         <main class="exam-console-body">
-            <div class="exam-instructions">
-                Type the passage exactly as shown. Backspace works only within the current word. The test submits automatically when time expires.
-            </div>
             <section class="exam-field-group exam-source-group">
                 <div class="exam-field-heading"><span>Source Passage</span><strong id="exam-passage-title">Administrative Reforms</strong></div>
                 <div id="exam-source-passage" class="exam-source-passage" tabindex="0"></div>
@@ -672,9 +700,15 @@
             </section>
         </main>
         <footer class="exam-console-footer">
-            <span id="exam-progress-note">Test in progress — do not refresh this page</span>
+            <div id="exam-progress-note" class="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-500" style="color: #ef4444;">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </span>
+                <span>Live Test</span>
+            </div>
             <div>
-                <button id="exam-reset-btn" class="exam-action secondary" type="button">Reset Response</button>
+                <button id="exam-guide-btn" class="exam-action secondary" type="button">Info</button>
                 <button id="exam-cancel-btn" class="exam-action danger" type="button">Cancel Test</button>
                 <button id="exam-submit-btn" class="exam-action primary" type="button">Submit Test</button>
             </div>
