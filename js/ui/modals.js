@@ -386,7 +386,7 @@ function renderRankModal(profile) {
     if (modalContent) {
         modalContent.className = 'modal-content relative max-w-md overflow-hidden';
         if (currentRank.class) {
-            modalContent.classList.add(currentRank.class);
+            modalContent.classList.add(...currentRank.class.split(' '));
         }
         modalContent.style.setProperty('--rank-glow-color', `${currentRank.colors[0]}20`);
         modalContent.style.setProperty('--emblem-glow-color', currentRank.colors[0]);
