@@ -41,7 +41,8 @@
     let selectedDuration = 600, selectedDifficulty = 'medium', selectedExam = 'JKSSB Junior Assistant';
     let remaining = 600, elapsed = 0, intervalId = null, passage = null, running = false, callbacks = {}, pendingConfirmation = null;
     let blindTranscript = false;
-    let userProfile = null;
+    let examWordIndices = [], examCharTimestamps = [], examWordPauses = [], examLastKeystrokeTime = null;
+    let userProfile = null, lastResult = null, showingOriginal = false;
     const $ = id => document.getElementById(id);
 
     function init(options = {}) {
@@ -87,11 +88,12 @@
             btn.addEventListener('click', () => selectDifficulty(btn));
         });
 
-        $('start-exam-btn').addEventListener('click', start);
+        $('start-exam-btn').addEventListener('click', () => start());
         $('exam-reset-btn').addEventListener('click', requestReset);
         $('exam-cancel-btn').addEventListener('click', cancel);
         $('exam-submit-btn').addEventListener('click', () => finish(false));
         $('exam-result-close').addEventListener('click', closeResult);
+        $('exam-result-publish').addEventListener('click', showAnalysis);
         $('exam-response').addEventListener('keydown', restrictBackspace);
         $('exam-response').addEventListener('input', updateWordCount);
         $('exam-response').addEventListener('paste', event => event.preventDefault());
@@ -231,7 +233,7 @@
     }
 
     function start(customPassage = null) {
-        if (customPassage) {
+        if (customPassage && !(customPassage instanceof Event)) {
             passage = { title: customPassage.title, text: customPassage.text };
         } else {
             const passages = PASSAGE_LIBRARY[selectedDifficulty];
@@ -248,6 +250,17 @@
             passage = { title: passages[seed].title, text: sourceText };
         }
         remaining = selectedDuration; elapsed = 0; running = true;
+        const analysisContainer = $('exam-analysis-container');
+        const card = $('exam-result-card');
+        const details = $('exam-scorecard-details');
+        const publishBtn = $('exam-result-publish');
+        if (analysisContainer) {
+            analysisContainer.classList.add('hidden');
+            analysisContainer.innerHTML = '';
+        }
+        if (card) card.classList.remove('wide');
+        if (details) details.classList.remove('hidden');
+        if (publishBtn) publishBtn.textContent = 'Publish';
         
         if (customPassage) {
             $('exam-passage-title').textContent = `${selectedExam} · Custom · ${passage.title}`;
@@ -272,6 +285,24 @@
             }
         });
         $('exam-source-passage').innerHTML = wordHtml;
+
+        // Build character index to word index mapping
+        examWordIndices = [];
+        let currentWordIdx = 0;
+        const textToType = passage.text;
+        for (let i = 0; i < textToType.length; i++) {
+            if (textToType[i] === ' ' || textToType[i] === '\n' || textToType[i] === '\t') {
+                examWordIndices[i] = -1;
+                if (i > 0 && textToType[i-1] !== ' ' && textToType[i-1] !== '\n' && textToType[i-1] !== '\t') {
+                    currentWordIdx++;
+                }
+            } else {
+                examWordIndices[i] = currentWordIdx;
+            }
+        }
+        examCharTimestamps = [];
+        examWordPauses = [];
+        examLastKeystrokeTime = null;
 
         $('exam-response').value = '';
         $('exam-result-overlay').classList.add('hidden');
@@ -339,6 +370,33 @@
 
     function updateWordCount() {
         const responseText = $('exam-response').value;
+        
+        const typedIndex = responseText.length - 1;
+        if (typedIndex >= 0) {
+            const now = Date.now();
+            examCharTimestamps[typedIndex] = now;
+            
+            const prefix = responseText.slice(0, typedIndex + 1);
+            const typedWordIdx = prefix.trim().split(/\s+/).filter(Boolean).length - 1;
+            const isFirstCharOfWord = /\S$/.test(prefix) && (prefix.length === 1 || /\s\S$/.test(prefix));
+            
+            if (typedWordIdx > 0 && isFirstCharOfWord) {
+                let prevLastCharIdx = -1;
+                let spaceSearchIdx = typedIndex - 1;
+                while (spaceSearchIdx >= 0 && /\s/.test(responseText[spaceSearchIdx])) {
+                    spaceSearchIdx--;
+                }
+                if (spaceSearchIdx >= 0 && !/\s/.test(responseText[spaceSearchIdx])) {
+                    prevLastCharIdx = spaceSearchIdx;
+                }
+                
+                if (prevLastCharIdx !== -1 && examCharTimestamps[prevLastCharIdx]) {
+                    const pause = now - examCharTimestamps[prevLastCharIdx];
+                    examWordPauses[typedWordIdx] = pause;
+                }
+            }
+        }
+
         const words = responseText.trim().split(/\s+/).filter(Boolean).length;
         $('exam-word-count').textContent = `${words} word${words === 1 ? '' : 's'}`;
 
@@ -497,7 +555,8 @@
             duration, grossWpm: Number(grossWpm.toFixed(2)), wpm: Number(netWpm.toFixed(2)),
             accuracy: Number(accuracy.toFixed(2)), fullMistakes, halfMistakes,
             errorUnits: Number(errorUnits.toFixed(2)), marks: Number(marks.toFixed(2)),
-            status: qualified ? 'QUALIFIED' : 'DISQUALIFIED'
+            status: qualified ? 'QUALIFIED' : 'DISQUALIFIED',
+            alignment
         };
     }
 
@@ -509,6 +568,7 @@
         if (!running) return;
         running = false; clearInterval(intervalId);
         const result = calculate($('exam-response').value);
+        lastResult = result;
         const config = EXAMS_CONFIG[result.examName] || EXAMS_CONFIG['JKSSB Junior Assistant'];
         try { await StorageDB.saveExamAttempt(result); } catch (error) { console.error('Could not save exam result:', error); }
         $('exam-result-status').textContent = result.status;
@@ -522,6 +582,27 @@
         $('exam-result-wpm').textContent = `${result.wpm.toFixed(2)} WPM`;
         $('exam-result-accuracy').textContent = `${result.accuracy.toFixed(2)}%`;
         $('exam-result-duration').textContent = formatTime(result.duration);
+        
+        // Calculate and set rhythm stats
+        const pauses = (examWordPauses || []).filter(v => typeof v === 'number');
+        let averagePause = 0;
+        let longestPause = 0;
+        let flow = 100;
+        if (pauses.length > 0) {
+            const sum = pauses.reduce((a, b) => a + b, 0);
+            averagePause = Math.round(sum / pauses.length);
+            longestPause = Number((Math.max(...pauses) / 1000).toFixed(2));
+            const mean = sum / pauses.length;
+            const variance = pauses.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / pauses.length;
+            const stdDev = Math.sqrt(variance);
+            if (mean > 0) {
+                flow = Math.max(0, Math.min(100, Math.round(100 * (1 - (stdDev / mean)))));
+            }
+        }
+        $('exam-result-avg-pause').textContent = averagePause > 0 ? `${averagePause} ms` : '-';
+        $('exam-result-max-pause').textContent = longestPause > 0 ? `${longestPause} sec` : '-';
+        $('exam-result-flow').textContent = averagePause > 0 ? `${(flow / 10).toFixed(1)}/10` : '-';
+
         $('exam-result-errors').textContent = `Gross speed: ${result.grossWpm.toFixed(2)} WPM · Full mistakes: ${result.fullMistakes} · Half mistakes: ${result.halfMistakes}`;
         $('exam-result-message').textContent = autoSubmitted ? 'Time expired and your response was submitted automatically.' : (result.status === 'QUALIFIED' ? 'You met the minimum speed and accuracy requirements.' : `Qualification requires at least ${config.wpm} WPM and ${config.accuracy}% accuracy.`);
         $('exam-result-overlay').querySelector('.exam-result-card').classList.toggle('is-fail', result.status !== 'QUALIFIED');
@@ -569,7 +650,117 @@
         if (!running) { closeConsole(); return; }
         showConfirmation('cancel', 'Cancel this test?', 'Your current response will be discarded and this attempt will not be saved.', 'Cancel test');
     }
-    function closeResult() { $('exam-result-overlay').classList.add('hidden'); closeConsole(); }
+    function closeResult() {
+        $('exam-result-overlay').classList.add('hidden');
+        const container = $('exam-analysis-container');
+        const card = $('exam-result-card');
+        const details = $('exam-scorecard-details');
+        const publishBtn = $('exam-result-publish');
+        if (container) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+        }
+        if (card) card.classList.remove('wide');
+        if (details) details.classList.remove('hidden');
+        if (publishBtn) publishBtn.textContent = 'Publish';
+        closeConsole();
+    }
+    function showAnalysis() {
+        const container = $('exam-analysis-container');
+        const card = $('exam-result-card');
+        const details = $('exam-scorecard-details');
+        const publishBtn = $('exam-result-publish');
+        if (!container || !card || !details || !publishBtn || !lastResult || !lastResult.alignment) return;
+
+        const isShowingAnalysis = !container.classList.contains('hidden');
+        if (isShowingAnalysis) {
+            container.classList.add('hidden');
+            details.classList.remove('hidden');
+            card.classList.remove('wide');
+            publishBtn.textContent = 'Publish';
+            showingOriginal = false;
+            return;
+        }
+
+        details.classList.add('hidden');
+        card.classList.add('wide');
+        container.classList.remove('hidden');
+        publishBtn.textContent = 'Scorecard';
+        showingOriginal = false;
+
+        updateAnalysisUI();
+    }
+
+    function renderAnalysisHtml(showOriginal) {
+        let html = '';
+        lastResult.alignment.forEach(pair => {
+            if (showOriginal) {
+                if (pair.action === 'match') {
+                    const expected = wordParts(pair.source), actual = wordParts(pair.typed);
+                    const hasHalf = expected.lexical !== actual.lexical || expected.punctuation !== actual.punctuation;
+                    if (hasHalf) {
+                        html += `<span class="analysis-word-half" title="Typed: '${pair.typed}'">${pair.source}<sub style="font-size: 0.58rem; vertical-align: sub; opacity: 0.75; margin-left: 2px;">(half)</sub></span> `;
+                    } else {
+                        html += `<span class="analysis-word-correct">${pair.source}</span> `;
+                    }
+                } else if (pair.action === 'wrong') {
+                    html += `<span class="analysis-word-wrong" title="Typed: '${pair.typed}'">${pair.source}<sub style="font-size: 0.58rem; vertical-align: sub; opacity: 0.75; margin-left: 2px;">(wrong)</sub></span> `;
+                } else if (pair.action === 'omit') {
+                    html += `<span class="analysis-word-omit" title="Omitted word">${pair.source}<sub style="font-size: 0.58rem; vertical-align: sub; opacity: 0.75; margin-left: 2px;">(missing)</sub></span> `;
+                }
+            } else {
+                if (pair.action === 'match') {
+                    const expected = wordParts(pair.source), actual = wordParts(pair.typed);
+                    const hasHalf = expected.lexical !== actual.lexical || expected.punctuation !== actual.punctuation;
+                    if (hasHalf) {
+                        html += `<span class="analysis-word-half" title="Expected: '${pair.source}'">${pair.typed}<sub style="font-size: 0.58rem; vertical-align: sub; opacity: 0.75; margin-left: 2px;">(half)</sub></span> `;
+                    } else {
+                        html += `<span class="analysis-word-correct">${pair.typed}</span> `;
+                    }
+                } else if (pair.action === 'wrong') {
+                    html += `<span class="analysis-word-wrong" title="Expected: '${pair.source}'">${pair.typed || '(space)'}<sub style="font-size: 0.58rem; vertical-align: sub; opacity: 0.75; margin-left: 2px;">(wrong)</sub></span> `;
+                } else if (pair.action === 'omit') {
+                    html += `<span class="analysis-word-omit" title="Missing word">${pair.source}<sub style="font-size: 0.58rem; vertical-align: sub; opacity: 0.75; margin-left: 2px;">(missing)</sub></span> `;
+                } else if (pair.action === 'add') {
+                    html += `<span class="analysis-word-add" title="Extra word">${pair.typed}<sub style="font-size: 0.58rem; vertical-align: sub; opacity: 0.75; margin-left: 2px;">(extra)</sub></span> `;
+                }
+            }
+        });
+        return html;
+    }
+
+    function updateAnalysisUI() {
+        const container = $('exam-analysis-container');
+        if (!container || !lastResult) return;
+
+        let html = `
+            <div class="flex justify-between items-center mb-2" style="border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; width: 100%;">
+                <div style="text-align: left;">
+                    <div class="font-bold text-xs uppercase tracking-wider" style="color: var(--accent-secondary);">
+                        Error Analysis Report (${showingOriginal ? 'Original Text' : 'Candidate Response'})
+                    </div>
+                    <div class="text-[0.74rem] leading-relaxed mt-1" style="color: var(--text-secondary);">
+                        Legend: <span class="analysis-word-wrong" style="text-decoration: none;">Wrong</span> · <span class="analysis-word-half" style="text-decoration: none;">Half Mistake</span> · <span class="analysis-word-omit" style="text-decoration: none;">Omitted</span> · <span class="analysis-word-add" style="text-decoration: none;">Extra</span>
+                    </div>
+                </div>
+                <button id="exam-analysis-toggle-view" class="exam-action secondary" style="padding: 6px 12px; font-size: 0.72rem; display: flex; align-items: center; gap: 6px; border-radius: 6px;" type="button">
+                    <i class="${showingOriginal ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}"></i>
+                    <span>${showingOriginal ? 'Show Typed' : 'Show Original'}</span>
+                </button>
+            </div>
+            <div id="exam-analysis-text-block" style="flex: 1; overflow-y: auto; text-align: left; font-size: 1.05rem; line-height: 2.1; font-family: 'Roboto Mono', monospace; padding: 0.5rem; color: var(--text-secondary);">
+                ${renderAnalysisHtml(showingOriginal)}
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        container.scrollTop = 0;
+        
+        $('exam-analysis-toggle-view').addEventListener('click', () => {
+            showingOriginal = !showingOriginal;
+            updateAnalysisUI();
+        });
+    }
     function closeConsole() { closeConfirmation(); $('exam-console').classList.add('hidden'); $('exam-console').setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
     function formatTime(seconds) { const safe = Math.max(0, seconds); return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, '0')}`; }
 

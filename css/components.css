@@ -152,9 +152,9 @@
 
 #caret {
     position: absolute;
-    width: 3px;
+    width: 2px;
     background-color: var(--accent-primary);
-    box-shadow: 0 0 12px var(--accent-primary);
+    box-shadow: none;
     border-radius: 4px;
     transition: left 0.08s cubic-bezier(0.175, 0.885, 0.32, 1.15), top 0.08s cubic-bezier(0.175, 0.885, 0.32, 1.15), height 0.08s ease;
     animation: blink 1.2s infinite;
@@ -476,17 +476,21 @@ input[type=range]::-webkit-slider-thumb {
 .exam-action:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .exam-action.primary { color: white; background: #1769aa; }.exam-action.secondary { color: #334155; background: #e2e8f0; }.exam-action.danger { color: white; background: #b91c1c; }
 .exam-result-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     z-index: 210;
     background: rgba(8, 12, 22, 0.82);
-    display: grid;
-    place-items: center;
-    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1rem;
     backdrop-filter: blur(12px);
+    overflow-y: auto;
 }
 .exam-result-card {
+    margin: auto;
     width: min(500px, 100%);
+    max-width: 500px;
     padding: 2.25rem 2.5rem;
     border-radius: 1.5rem;
     background: var(--bg-secondary);
@@ -494,7 +498,35 @@ input[type=range]::-webkit-slider-thumb {
     text-align: center;
     box-shadow: 0 24px 75px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
+    transition: max-width 0.35s ease, width 0.35s ease;
     animation: exam-result-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.exam-result-card.wide {
+    width: 95vw;
+    max-width: 95vw;
+    height: 90vh;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+#exam-analysis-container {
+    margin-top: 1.5rem;
+    text-align: left;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 1.25rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-family: 'Roboto Mono', monospace;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.exam-result-card.wide #exam-analysis-container {
+    flex: 1;
 }
 @keyframes exam-result-in {
     from { opacity: 0; transform: scale(0.92) translateY(15px); }
@@ -952,13 +984,13 @@ input[type=range]::-webkit-slider-thumb {
 /* Active Character Micro-interaction */
 #text-display span.active-char {
     position: relative;
-    color: var(--accent-primary) !important;
-    text-shadow: 0 0 10px var(--accent-primary);
-    animation: activeCharPulse 1.2s infinite ease-in-out;
+    color: var(--text-primary) !important;
+    text-shadow: none;
+    animation: none;
 }
-@keyframes activeCharPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.08); opacity: 0.8; }
+#text-display span.current-word {
+    border-bottom: 2px solid var(--accent-primary);
+    opacity: 1;
 }
 
 /* Keyboard Heatmap Analytics styles */
@@ -1004,6 +1036,35 @@ input[type=range]::-webkit-slider-thumb {
 .key-shift-l { min-width: 76px; }
 .key-shift-r { min-width: 86px; }
 .key-space { min-width: 240px; }
+
+/* Exam Result Error Analysis Styles */
+.analysis-word-correct {
+    color: var(--text-primary);
+}
+.analysis-word-half {
+    color: #fbbf24 !important; /* amber/yellow */
+    font-weight: 700;
+    text-decoration: underline dashed #fbbf24;
+    text-underline-offset: 4px;
+}
+.analysis-word-wrong {
+    color: var(--incorrect-color) !important; /* reddish */
+    font-weight: 700;
+    text-decoration: underline dashed var(--incorrect-color);
+    text-underline-offset: 4px;
+}
+.analysis-word-omit {
+    color: #38bdf8 !important; /* sky blue */
+    font-weight: 700;
+    text-decoration: underline dashed #38bdf8;
+    text-underline-offset: 4px;
+}
+.analysis-word-add {
+    color: #c084fc !important; /* purple */
+    font-weight: 700;
+    text-decoration: underline dashed #c084fc;
+    text-underline-offset: 4px;
+}
 
 
 

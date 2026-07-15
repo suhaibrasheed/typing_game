@@ -60,6 +60,12 @@
     text-align: center;
 }
 
+@media (min-width: 768px) {
+    #results-modal .modal-content {
+        max-width: 650px;
+    }
+}
+
 #results-modal .stat-large {
     font-size: 3.5rem;
     font-weight: 800;

@@ -579,7 +579,7 @@
 
     // 4. Session complete callback handling
     window.addEventListener('typingGameComplete', async (e) => {
-        const { wpm, accuracy, wordsTyped, won, levelId, curriculum, mistakeSummary } = e.detail;
+        const { wpm, accuracy, wordsTyped, won, levelId, curriculum, mistakeSummary, averagePause, longestPause, flow } = e.detail;
 
         // Fetch previous best speed before syncing the new run
         const runsKey = `${curriculum}_${levelId}`;
@@ -706,18 +706,18 @@
                     newRankName, 
                     appState.profile.totalWordsTyped, 
                     () => {
-                        ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, mistakeSummary);
+                        ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, mistakeSummary, averagePause, longestPause, flow);
                     }
                 );
             } else {
-                ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, mistakeSummary);
+                ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, mistakeSummary, averagePause, longestPause, flow);
             }
         } catch (error) {
             console.error("Resilient recovery: error in game completion stats save:", error);
             // Always display the results modal to the user even if DB or rank checks fail
             const competitorState = CompetitorAI.getCompetitorState();
             const username = (appState.profile && appState.profile.username) || 'You';
-            ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, null);
+            ModalsUI.renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, wordsTyped, competitorState, username, handleRetry, handleNext, handleMenu, null, e.detail.averagePause || 0, e.detail.longestPause || 0, e.detail.flow || 100);
         }
     });
 

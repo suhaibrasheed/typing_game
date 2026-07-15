@@ -447,14 +447,35 @@
                 </div>
             </div>
             
-            <div id="results-outcome-box" class="bg-secondary/50 border border-[var(--border-color)] p-4 rounded-xl mb-4 text-center">
-                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-1.5">Race Outcome</h4>
-                <p id="results-outcome-comment" class="text-sm text-secondary leading-relaxed font-semibold">Calculating outcome...</p>
+            <div class="grid grid-cols-3 gap-2 bg-secondary/30 border border-[var(--border-color)] p-3.5 rounded-xl mb-5 text-center">
+                <div>
+                    <p class="text-secondary text-[0.68rem] font-bold uppercase tracking-wider mb-1">Avg Pause</p>
+                    <p class="text-2xl font-black text-primary"><span id="results-avg-pause">-</span> <span class="text-xs text-secondary font-mono font-semibold">ms</span></p>
+                </div>
+                <div class="border-l border-r border-[var(--border-color)]">
+                    <p class="text-secondary text-[0.68rem] font-bold uppercase tracking-wider mb-1">Max Pause</p>
+                    <p class="text-2xl font-black text-primary"><span id="results-max-pause">-</span> <span class="text-xs text-secondary font-mono font-semibold">sec</span></p>
+                </div>
+                <div>
+                    <p class="text-secondary text-[0.68rem] font-bold uppercase tracking-wider mb-1">Flow</p>
+                    <p class="text-2xl font-black text-[var(--accent-secondary)]"><span id="results-flow">-</span><span class="text-xs text-secondary font-mono font-semibold">/10</span></p>
+                </div>
             </div>
             
-            <div class="bg-secondary/50 border border-[var(--border-color)] p-4 rounded-xl mb-8 text-center">
-                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-1.5">Coach Performance Feedback</h4>
-                <p id="results-suggestion" class="text-xs text-secondary leading-relaxed font-medium">Analyzing run...</p>
+            <div class="flex flex-col gap-4 mb-6">
+                <div id="results-outcome-box" class="bg-gradient-to-b from-tertiary/40 to-secondary/40 border border-[var(--border-color)] p-5 rounded-2xl text-center flex flex-col justify-center transition-all duration-300 hover:border-[var(--accent-primary)]/30 hover:shadow-lg hover:shadow-black/20">
+                    <h4 class="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-widest mb-3">
+                        Race Outcome
+                    </h4>
+                    <p id="results-outcome-comment" class="text-sm text-secondary leading-relaxed font-medium">Calculating outcome...</p>
+                </div>
+                
+                <div id="results-feedback-box" class="bg-gradient-to-b from-tertiary/40 to-secondary/40 border border-[var(--border-color)] p-5 rounded-2xl text-center flex flex-col justify-center transition-all duration-300 hover:border-[var(--accent-secondary)]/30 hover:shadow-lg hover:shadow-black/20">
+                    <h4 class="text-xs font-bold text-[var(--accent-secondary)] uppercase tracking-widest mb-3">
+                        Coach's Feedback
+                    </h4>
+                    <p id="results-suggestion" class="text-sm text-secondary leading-relaxed font-medium">Analyzing run...</p>
+                </div>
             </div>
             
             <div id="results-buttons" class="flex flex-col sm:flex-row gap-3 justify-center"></div>
@@ -659,18 +680,29 @@
             </div>
         </footer>
         <div id="exam-result-overlay" class="exam-result-overlay hidden" role="dialog" aria-modal="true">
-            <article class="exam-result-card">
-                <p class="exam-kicker">Official Score Card · <span id="exam-result-exam-name">JKSSB Junior Assistant</span></p>
-                <h2 id="exam-result-status">QUALIFIED</h2>
-                <div class="exam-result-marks"><strong id="exam-result-marks">0.00</strong><span id="exam-result-marks-max">/ 20</span></div>
-                <div class="exam-result-metrics">
-                    <span><small>Net Speed</small><strong id="exam-result-wpm">0 WPM</strong></span>
-                    <span><small>Accuracy</small><strong id="exam-result-accuracy">0%</strong></span>
-                    <span><small>Duration</small><strong id="exam-result-duration">0:00</strong></span>
+            <article class="exam-result-card" id="exam-result-card">
+                <div id="exam-scorecard-details">
+                    <p class="exam-kicker">Official Score Card · <span id="exam-result-exam-name">JKSSB Junior Assistant</span></p>
+                    <h2 id="exam-result-status">QUALIFIED</h2>
+                    <div class="exam-result-marks"><strong id="exam-result-marks">0.00</strong><span id="exam-result-marks-max">/ 20</span></div>
+                    <div class="exam-result-metrics">
+                        <span><small>Net Speed</small><strong id="exam-result-wpm">0 WPM</strong></span>
+                        <span><small>Accuracy</small><strong id="exam-result-accuracy">0%</strong></span>
+                        <span><small>Duration</small><strong id="exam-result-duration">0:00</strong></span>
+                    </div>
+                    <div class="exam-result-metrics" style="border-top: none; margin-top: -1.25rem;">
+                        <span><small>Avg Pause</small><strong id="exam-result-avg-pause">- ms</strong></span>
+                        <span><small>Max Pause</small><strong id="exam-result-max-pause">- sec</strong></span>
+                        <span><small>Flow</small><strong id="exam-result-flow">-</strong></span>
+                    </div>
+                    <p id="exam-result-errors" class="exam-result-errors">Gross speed: 0 WPM · Full mistakes: 0 · Half mistakes: 0</p>
+                    <p id="exam-result-message"></p>
                 </div>
-                <p id="exam-result-errors" class="exam-result-errors">Gross speed: 0 WPM · Full mistakes: 0 · Half mistakes: 0</p>
-                <p id="exam-result-message"></p>
-                <button id="exam-result-close" class="exam-action primary" type="button">Return to Exam Home</button>
+                <div class="exam-result-actions" style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; width: 100%;">
+                    <button id="exam-result-publish" class="exam-action secondary" type="button" style="flex: 1; min-width: 120px;">Publish</button>
+                    <button id="exam-result-close" class="exam-action primary" type="button" style="flex: 1; min-width: 120px;">Return</button>
+                </div>
+                <div id="exam-analysis-container" class="hidden"></div>
             </article>
         </div>
         <div id="exam-confirm-overlay" class="exam-confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="exam-confirm-title">

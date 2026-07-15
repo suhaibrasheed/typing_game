@@ -90,6 +90,23 @@
         gameState.textLength = finalContent.length;
         gameState.allWordsInLesson = finalContent.split(/\s+/).map(w => w.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "").trim().toLowerCase()).filter(Boolean);
 
+        // Build character index to word index mapping
+        const wordIndices = [];
+        let currentWordIdx = 0;
+        for (let i = 0; i < finalContent.length; i++) {
+            if (finalContent[i] === ' ' || finalContent[i] === '\n' || finalContent[i] === '\t') {
+                wordIndices[i] = -1; // space separator
+                if (i > 0 && finalContent[i-1] !== ' ' && finalContent[i-1] !== '\n' && finalContent[i-1] !== '\t') {
+                    currentWordIdx++;
+                }
+            } else {
+                wordIndices[i] = currentWordIdx;
+            }
+        }
+        gameState.wordIndices = wordIndices;
+        gameState.charTimestamps = [];
+        gameState.wordPauses = [];
+
         // Render characters
         textDisplay.innerHTML = `<div id="caret"></div>${finalContent.split('').map(c => `<span>${c}</span>`).join('')}`;
         textDisplay.scrollTop = 0;
@@ -133,6 +150,26 @@
             const lastChar = typedValue[typedValue.length - 1];
             StorageDB.saveKeystrokeDelay(lastChar, delay);
         }
+
+        const typedIndex = typedValue.length - 1;
+        if (typedIndex >= 0 && typedIndex < gameState.textLength) {
+            gameState.charTimestamps[typedIndex] = now;
+            const w = gameState.wordIndices[typedIndex];
+            if (w > 0 && (typedIndex === 0 || gameState.wordIndices[typedIndex - 1] !== w)) {
+                let prevLastCharIdx = -1;
+                for (let scan = typedIndex - 1; scan >= 0; scan--) {
+                    if (gameState.wordIndices[scan] === w - 1) {
+                        prevLastCharIdx = scan;
+                        break;
+                    }
+                }
+                if (prevLastCharIdx !== -1 && gameState.charTimestamps[prevLastCharIdx]) {
+                    const pause = now - gameState.charTimestamps[prevLastCharIdx];
+                    gameState.wordPauses[w] = pause;
+                }
+            }
+        }
+
         gameState.lastKeystrokeTime = now;
         gameState.totalTyped = Math.max(gameState.totalTyped, typedValue.length);
 
@@ -212,12 +249,19 @@
             caret.style.top = `${charSpan.offsetTop}px`;
             caret.style.height = `${charSpan.offsetHeight}px`;
             
-            // Toggle active-char class for the current typing character
+            // Toggle active-char and current-word classes for the current typing word/character
+            const currentWordIdx = gameState.wordIndices ? gameState.wordIndices[index] : -1;
             charSpans.forEach((span, i) => {
                 if (i === index) {
                     span.classList.add('active-char');
                 } else {
                     span.classList.remove('active-char');
+                }
+                
+                if (currentWordIdx !== -1 && gameState.wordIndices && gameState.wordIndices[i] === currentWordIdx) {
+                    span.classList.add('current-word');
+                } else {
+                    span.classList.remove('current-word');
                 }
             });
 
@@ -329,9 +373,25 @@
             }
         }
 
+        const pauses = (gameState.wordPauses || []).filter(v => typeof v === 'number');
+        let averagePause = 0;
+        let longestPause = 0;
+        let flow = 100;
+        if (pauses.length > 0) {
+            const sum = pauses.reduce((a, b) => a + b, 0);
+            averagePause = Math.round(sum / pauses.length);
+            longestPause = Number((Math.max(...pauses) / 1000).toFixed(2));
+            const mean = sum / pauses.length;
+            const variance = pauses.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / pauses.length;
+            const stdDev = Math.sqrt(variance);
+            if (mean > 0) {
+                flow = Math.max(0, Math.min(100, Math.round(100 * (1 - (stdDev / mean)))));
+            }
+        }
+
         // Trigger global complete callback in main.js
         const event = new CustomEvent('typingGameComplete', {
-            detail: { wpm, accuracy, wordsTyped, won, levelId: gameState.currentLevelData.id, curriculum: gameState.curriculum, mistakeSummary }
+            detail: { wpm, accuracy, wordsTyped, won, levelId: gameState.currentLevelData.id, curriculum: gameState.curriculum, mistakeSummary, averagePause, longestPause, flow }
         });
         window.dispatchEvent(event);
     }

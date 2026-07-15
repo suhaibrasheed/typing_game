@@ -129,7 +129,7 @@ function renderSettingsModal(profile, onSaveCallback) {
 }
 
 // 2. Results Modal UI
-function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseWords, competitorState, username, onRetry, onNext, onMenu, mistakeSummary) {
+function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseWords, competitorState, username, onRetry, onNext, onMenu, mistakeSummary, averagePause = 0, longestPause = 0, flow = 100) {
     const title = document.getElementById('results-title');
     const wpmVal = document.getElementById('results-wpm');
     const accVal = document.getElementById('results-accuracy');
@@ -138,27 +138,35 @@ function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseW
     const buttons = document.getElementById('results-buttons');
     const outcomeBox = document.getElementById('results-outcome-box');
 
+    const avgPauseEl = document.getElementById('results-avg-pause');
+    const maxPauseEl = document.getElementById('results-max-pause');
+    const flowEl = document.getElementById('results-flow');
+
     if (title) title.textContent = mistakeSummary ? 'Training Complete!' : (won ? 'Victory!' : 'Defeat!');
     if (wpmVal) wpmVal.textContent = wpm;
     if (accVal) accVal.textContent = `${accuracy}%`;
     if (xpVal) xpVal.textContent = `+${xpEarned}`;
 
+    if (avgPauseEl) avgPauseEl.textContent = averagePause > 0 ? `${averagePause}` : '-';
+    if (maxPauseEl) maxPauseEl.textContent = longestPause > 0 ? `${longestPause}` : '-';
+    if (flowEl) flowEl.textContent = averagePause > 0 ? `${(flow / 10).toFixed(1)}` : '-';
+
     if (mistakeSummary) {
         if (outcomeBox) {
             outcomeBox.innerHTML = `
-                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-2">Precision Review Summary</h4>
-                <div class="grid grid-cols-3 gap-2 mt-2">
-                    <div class="bg-green-500/10 border border-green-500/20 p-2.5 rounded-xl">
+                <h4 class="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-widest mb-3">Precision Review Summary</h4>
+                <div class="grid grid-cols-3 gap-2 mt-1">
+                    <div class="bg-green-500/10 border border-green-500/20 p-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03]">
                         <span class="block text-[0.62rem] text-green-400 font-bold uppercase tracking-wider">Graduated</span>
                         <strong class="text-lg text-green-400 font-black">${mistakeSummary.graduated}</strong>
                         <span class="block text-[0.52rem] text-secondary">fully cleared</span>
                     </div>
-                    <div class="bg-blue-500/10 border border-blue-500/20 p-2.5 rounded-xl">
+                    <div class="bg-blue-500/10 border border-blue-500/20 p-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03]">
                         <span class="block text-[0.62rem] text-blue-400 font-bold uppercase tracking-wider">Weakened</span>
                         <strong class="text-lg text-blue-400 font-black">${mistakeSummary.reduced}</strong>
                         <span class="block text-[0.52rem] text-secondary">errors reduced</span>
                     </div>
-                    <div class="bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl">
+                    <div class="bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03]">
                         <span class="block text-[0.62rem] text-red-400 font-bold uppercase tracking-wider">Remaining</span>
                         <strong class="text-lg text-red-400 font-black">${mistakeSummary.remaining}</strong>
                         <span class="block text-[0.52rem] text-secondary">errors left</span>
@@ -176,8 +184,8 @@ function renderResultsModal(wpm, accuracy, won, previousBestWpm, xpEarned, baseW
     } else {
         if (outcomeBox) {
             outcomeBox.innerHTML = `
-                <h4 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-1.5">Race Outcome</h4>
-                <p id="results-outcome-comment" class="text-sm text-secondary leading-relaxed font-semibold">Calculating outcome...</p>
+                <h4 class="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-widest mb-3">Race Outcome</h4>
+                <p id="results-outcome-comment" class="text-sm text-secondary leading-relaxed font-medium">Calculating outcome...</p>
             `;
         }
         const outcomeComment = document.getElementById('results-outcome-comment');
