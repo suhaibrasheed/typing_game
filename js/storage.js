@@ -168,7 +168,7 @@
             if (wordsArray.length === 0) return resolve();
             
             // Clean up and deduplicate word list to prevent concurrent IndexedDB race conditions on the same key
-            const uniqueCleanWords = [...new Set(wordsArray.map(w => w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "").trim()))].filter(Boolean);
+            const uniqueCleanWords = [...new Set(wordsArray.map(w => w.trim()))].filter(Boolean);
             if (uniqueCleanWords.length === 0) return resolve();
             
             uniqueCleanWords.forEach(wordClean => {
@@ -230,7 +230,7 @@
             if (wordsArray.length === 0) return resolve();
             
             // Clean up and deduplicate word list to prevent concurrent IndexedDB race conditions
-            const uniqueCleanWords = [...new Set(wordsArray.map(w => w.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "").trim()))].filter(Boolean);
+            const uniqueCleanWords = [...new Set(wordsArray.map(w => w.trim()))].filter(Boolean);
             if (uniqueCleanWords.length === 0) return resolve();
 
             uniqueCleanWords.forEach(wordClean => {

@@ -351,7 +351,7 @@
             clearedWords.forEach(w => {
                 const record = rawGroup.find(item => item.word === w);
                 if (record) {
-                    if ((record.weight || 1) <= 1) {
+                    if ((record.weight || 1) - 2 <= 1) {
                         graduatedCount++;
                     } else {
                         reducedCount++;
@@ -453,7 +453,7 @@
         while (end < text.length && /\S/.test(text[end])) {
             end++;
         }
-        return text.slice(start, end).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "").trim().toLowerCase();
+        return text.slice(start, end).trim();
     }
 
     window.GameEngine = {
