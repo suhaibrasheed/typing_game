@@ -450,6 +450,7 @@
     function alignWords(sourceTokens, typedTokens) {
         // If highlights are enabled (non-blind mode), the candidate is guided word-for-word in lockstep.
         // Therefore, we align strictly index-to-index to prevent lookahead greedy sync errors.
+        // We only evaluate up to the typed words (untyped trailing words are ignored, not treated as errors).
         if (!blindTranscript) {
             const pairs = [];
             const len = Math.min(sourceTokens.length, typedTokens.length);
@@ -467,16 +468,14 @@
             for (let i = len; i < typedTokens.length; i++) {
                 pairs.push({ action: 'add', source: '', typed: typedTokens[i] });
             }
-            for (let i = len; i < sourceTokens.length; i++) {
-                pairs.push({ action: 'omit', source: sourceTokens[i], typed: '' });
-            }
             return pairs;
         }
 
         // If in Blind Transcript mode, the candidate can skip or add words freely.
         // We use a dynamic programming Levenshtein-based alignment to find insertions and omissions robustly.
-        const M = sourceTokens.length;
+        // To prevent penalizing untyped text at the end of long articles, we limit the DP matching boundary.
         const N = typedTokens.length;
+        const M = Math.min(sourceTokens.length, N + 30);
         const dp = Array.from({ length: M + 1 }, () => new Int32Array(N + 1));
         
         for (let i = 0; i <= M; i++) dp[i][0] = i;
@@ -496,8 +495,18 @@
             }
         }
         
+        // Find the best ending index in the source text that minimizes edit distance for the typed tokens
+        let bestI = N;
+        let minVal = Infinity;
+        for (let i = Math.max(0, N - 30); i <= M; i++) {
+            if (dp[i][N] < minVal) {
+                minVal = dp[i][N];
+                bestI = i;
+            }
+        }
+
         const pairs = [];
-        let i = M, j = N;
+        let i = bestI, j = N;
         while (i > 0 || j > 0) {
             if (i > 0 && j > 0) {
                 const sToken = sourceTokens[i - 1];
