@@ -412,7 +412,7 @@
         const field = event.currentTarget;
         const cursor = field.selectionStart;
         
-        if (event.ctrlKey || event.metaKey) {
+        if (event.ctrlKey || event.metaKey || event.altKey) {
             event.preventDefault();
             if (field.selectionStart !== field.selectionEnd) {
                 const start = field.selectionStart;

@@ -32,7 +32,7 @@
         },
         'High Court Typist': {
             wpm: 40,
-            accuracy: 95,
+            accuracy: 90,
             maxMarks: 20,
             desc: 'High Court Clerk/Typist typing exam. Challenging test requiring 40 WPM speed and high precision.'
         }
@@ -329,8 +329,8 @@
         const isRestrictedMode = (selectedExam === 'JKSSB Junior Assistant' || selectedExam === 'High Court Typist');
         const field = event.currentTarget;
         const cursor = field.selectionStart;
-        // Custom Cmd/Ctrl + Backspace word deletion
-        if (event.ctrlKey || event.metaKey) {
+        // Custom Cmd/Ctrl/Option + Backspace word deletion
+        if (event.ctrlKey || event.metaKey || event.altKey) {
             event.preventDefault();
             if (field.selectionStart !== field.selectionEnd) {
                 // Delete selected text
@@ -541,10 +541,6 @@
                 wrongExamWords.push(pair.source);
             }
         });
-        if (wrongExamWords.length > 0 && window.StorageDB && window.StorageDB.addMistakeWords) {
-            StorageDB.addMistakeWords(wrongExamWords).catch(e => console.error(e));
-        }
-
         // Government guidelines treat missing/extra separation as a half mistake.
         const repeatedSpaces = [...text.matchAll(/ {2,}/g)];
         repeatedSpaces.forEach(match => {
@@ -552,10 +548,20 @@
             if (!(previous === '.' && match[0].length === 2)) halfMistakes += 1;
         });
 
-        const errorUnits = fullMistakes + (halfMistakes * 0.5);
+        const isHighCourt = selectedExam === 'High Court Typist';
         const grossWpm = (text.length / 5) / minutes;
-        const netWpm = Math.max(0, grossWpm - (errorUnits / minutes));
-        const accuracy = grossWpm > 0 ? Math.max(0, (netWpm / grossWpm) * 100) : 0;
+        const errorUnits = fullMistakes + (halfMistakes * 0.5);
+        let netWpm = 0;
+        let accuracy = 0;
+
+        if (isHighCourt) {
+            netWpm = Math.max(0, grossWpm - (0.2 * errorUnits / minutes)); // 80% reduced speed penalty
+            const penalizedNet = Math.max(0, grossWpm - (errorUnits / minutes));
+            accuracy = grossWpm > 0 ? (penalizedNet / grossWpm) * 100 : 0;
+        } else {
+            netWpm = Math.max(0, grossWpm - (errorUnits / minutes));
+            accuracy = grossWpm > 0 ? Math.max(0, (netWpm / grossWpm) * 100) : 0;
+        }
         const config = EXAMS_CONFIG[selectedExam] || EXAMS_CONFIG['JKSSB Junior Assistant'];
         const qualified = netWpm >= config.wpm && accuracy >= config.accuracy;
         const marks = config.maxMarks > 0 ? (qualified ? Math.min(config.maxMarks, netWpm * (config.maxMarks / 98)) : 0) : 0;
@@ -564,7 +570,8 @@
             accuracy: Number(accuracy.toFixed(2)), fullMistakes, halfMistakes,
             errorUnits: Number(errorUnits.toFixed(2)), marks: Number(marks.toFixed(2)),
             status: qualified ? 'QUALIFIED' : 'DISQUALIFIED',
-            alignment
+            alignment,
+            wrongExamWords
         };
     }
 
@@ -578,7 +585,14 @@
         const result = calculate($('exam-response').value);
         lastResult = result;
         const config = EXAMS_CONFIG[result.examName] || EXAMS_CONFIG['JKSSB Junior Assistant'];
-        try { await StorageDB.saveExamAttempt(result); } catch (error) { console.error('Could not save exam result:', error); }
+        try { 
+            await StorageDB.saveExamAttempt(result); 
+            if (result.wrongExamWords && result.wrongExamWords.length > 0 && StorageDB.addMistakeWords) {
+                await StorageDB.addMistakeWords(result.wrongExamWords);
+            }
+        } catch (error) { 
+            console.error('Could not save exam result or mistakes:', error); 
+        }
         $('exam-result-status').textContent = result.status;
         if (config.maxMarks > 0) {
             $('exam-result-marks').textContent = result.marks.toFixed(2);

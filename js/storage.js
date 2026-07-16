@@ -201,8 +201,8 @@
             const request = store.getAll();
             request.onsuccess = () => {
                 const list = request.result || [];
-                // Sort by weight descending, then timestamp descending
-                list.sort((a, b) => (b.weight || 1) - (a.weight || 1) || b.timestamp - a.timestamp);
+                // Sort by weight ascending (easily graduated first), then timestamp descending (newest first)
+                list.sort((a, b) => (a.weight || 1) - (b.weight || 1) || b.timestamp - a.timestamp);
                 resolve(list.map(item => item.word));
             };
             request.onerror = () => resolve([]);
@@ -215,8 +215,8 @@
             const request = store.getAll();
             request.onsuccess = () => {
                 const list = request.result || [];
-                // Sort by weight descending
-                list.sort((a, b) => (b.weight || 1) - (a.weight || 1) || b.timestamp - a.timestamp);
+                // Sort by weight ascending (easily graduated first), then timestamp descending (newest first)
+                list.sort((a, b) => (a.weight || 1) - (b.weight || 1) || b.timestamp - a.timestamp);
                 resolve(list);
             };
             request.onerror = () => resolve([]);
