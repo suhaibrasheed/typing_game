@@ -448,74 +448,86 @@
     // Align typed words against the source passage using a lookahead scanning strategy.
     // This replicates how actual evaluation software scans for omissions and insertions.
     function alignWords(sourceTokens, typedTokens) {
+        // If highlights are enabled (non-blind mode), the candidate is guided word-for-word in lockstep.
+        // Therefore, we align strictly index-to-index to prevent lookahead greedy sync errors.
+        if (!blindTranscript) {
+            const pairs = [];
+            const len = Math.min(sourceTokens.length, typedTokens.length);
+            for (let i = 0; i < len; i++) {
+                const sToken = sourceTokens[i];
+                const tToken = typedTokens[i];
+                const sParts = wordParts(sToken);
+                const tParts = wordParts(tToken);
+                if (sParts.canonical === tParts.canonical) {
+                    pairs.push({ action: 'match', source: sToken, typed: tToken });
+                } else {
+                    pairs.push({ action: 'wrong', source: sToken, typed: tToken });
+                }
+            }
+            for (let i = len; i < typedTokens.length; i++) {
+                pairs.push({ action: 'add', source: '', typed: typedTokens[i] });
+            }
+            for (let i = len; i < sourceTokens.length; i++) {
+                pairs.push({ action: 'omit', source: sourceTokens[i], typed: '' });
+            }
+            return pairs;
+        }
+
+        // If in Blind Transcript mode, the candidate can skip or add words freely.
+        // We use a dynamic programming Levenshtein-based alignment to find insertions and omissions robustly.
+        const M = sourceTokens.length;
+        const N = typedTokens.length;
+        const dp = Array.from({ length: M + 1 }, () => new Int32Array(N + 1));
+        
+        for (let i = 0; i <= M; i++) dp[i][0] = i;
+        for (let j = 0; j <= N; j++) dp[0][j] = j;
+        
+        for (let i = 1; i <= M; i++) {
+            const sLower = wordParts(sourceTokens[i - 1]).canonical;
+            for (let j = 1; j <= N; j++) {
+                const tLower = wordParts(typedTokens[j - 1]).canonical;
+                const cost = sLower === tLower ? 0 : 1.5; // Cost of 1.5 prefers a substitution over an insertion + deletion (cost 2)
+                
+                dp[i][j] = Math.min(
+                    dp[i - 1][j - 1] + cost, // subst/match
+                    dp[i - 1][j] + 1,       // omit (deletion)
+                    dp[i][j - 1] + 1        // add (insertion)
+                );
+            }
+        }
+        
         const pairs = [];
-        let i = 0, j = 0;
-        const maxI = sourceTokens.length;
-        const maxJ = typedTokens.length;
-
-        while (i < maxI && j < maxJ) {
-            const sToken = sourceTokens[i];
-            const tToken = typedTokens[j];
-            const sParts = wordParts(sToken);
-            const tParts = wordParts(tToken);
-
-            if (sParts.canonical === tParts.canonical) {
-                pairs.push({ action: 'match', source: sToken, typed: tToken });
-                i++;
-                j++;
+        let i = M, j = N;
+        while (i > 0 || j > 0) {
+            if (i > 0 && j > 0) {
+                const sToken = sourceTokens[i - 1];
+                const tToken = typedTokens[j - 1];
+                const sLower = wordParts(sToken).canonical;
+                const tLower = wordParts(tToken).canonical;
+                const cost = sLower === tLower ? 0 : 1.5;
+                
+                if (dp[i][j] === dp[i - 1][j - 1] + cost) {
+                    if (cost === 0) {
+                        pairs.push({ action: 'match', source: sToken, typed: tToken });
+                    } else {
+                        pairs.push({ action: 'wrong', source: sToken, typed: tToken });
+                    }
+                    i--; j--;
+                    continue;
+                }
+            }
+            if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) {
+                pairs.push({ action: 'omit', source: sourceTokens[i - 1], typed: '' });
+                i--;
                 continue;
             }
-
-            // Lookahead in source: check if candidate skipped words
-            let skipFound = false;
-            for (let look = 1; look <= 4; look++) {
-                if (i + look < maxI) {
-                    const lookParts = wordParts(sourceTokens[i + look]);
-                    if (lookParts.canonical === tParts.canonical) {
-                        for (let k = 0; k < look; k++) {
-                            pairs.push({ action: 'omit', source: sourceTokens[i + k], typed: '' });
-                        }
-                        pairs.push({ action: 'match', source: sourceTokens[i + look], typed: tToken });
-                        i += look + 1;
-                        j++;
-                        skipFound = true;
-                        break;
-                    }
-                }
+            if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) {
+                pairs.push({ action: 'add', source: '', typed: typedTokens[j - 1] });
+                j--;
+                continue;
             }
-            if (skipFound) continue;
-
-            // Lookahead in typed: check if candidate inserted extra words
-            let insertFound = false;
-            for (let look = 1; look <= 4; look++) {
-                if (j + look < maxJ) {
-                    const lookParts = wordParts(typedTokens[j + look]);
-                    if (sParts.canonical === lookParts.canonical) {
-                        for (let k = 0; k < look; k++) {
-                            pairs.push({ action: 'add', source: '', typed: typedTokens[j + k] });
-                        }
-                        pairs.push({ action: 'match', source: sToken, typed: typedTokens[j + look] });
-                        i++;
-                        j += look + 1;
-                        insertFound = true;
-                        break;
-                    }
-                }
-            }
-            if (insertFound) continue;
-
-            // Simple substitution / wrong word
-            pairs.push({ action: 'wrong', source: sToken, typed: tToken });
-            i++;
-            j++;
         }
-
-        // Remaining typed tokens are treated as extra words (insertions)
-        while (j < maxJ) {
-            pairs.push({ action: 'add', source: '', typed: typedTokens[j++] });
-        }
-
-        return pairs;
+        return pairs.reverse();
     }
 
     function evaluateText(text, reference, seconds) {
