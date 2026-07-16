@@ -564,7 +564,7 @@
         }
         const config = EXAMS_CONFIG[selectedExam] || EXAMS_CONFIG['JKSSB Junior Assistant'];
         const qualified = netWpm >= config.wpm && accuracy >= config.accuracy;
-        const marks = config.maxMarks > 0 ? (qualified ? Math.min(config.maxMarks, netWpm * (config.maxMarks / 98)) : 0) : 0;
+        const marks = config.maxMarks > 0 ? (qualified ? Math.min(config.maxMarks, netWpm * (config.maxMarks / 95)) : 0) : 0;
         return {
             duration, grossWpm: Number(grossWpm.toFixed(2)), wpm: Number(netWpm.toFixed(2)),
             accuracy: Number(accuracy.toFixed(2)), fullMistakes, halfMistakes,
