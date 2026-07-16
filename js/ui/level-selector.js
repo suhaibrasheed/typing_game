@@ -123,11 +123,27 @@
         if (activeTab === 'mistakes') {
             const rawMistakes = window.StorageDB && window.StorageDB.getMistakeWordsRaw ? await StorageDB.getMistakeWordsRaw() : [];
             if (rawMistakes.length === 0) {
+                if (window.SoundEngine && SoundEngine.playSuccessSound) {
+                    SoundEngine.playSuccessSound();
+                }
+                if (typeof triggerConfetti === 'function') {
+                    triggerConfetti('global-confetti-container', 120);
+                }
                 gridContainer.innerHTML = `
-                    <div class="exam-empty-state col-span-full py-12 text-center border-dashed border border-white/5 rounded-2xl p-8" style="grid-column: 1 / -1;">
-                        <span class="text-3xl opacity-50 block mb-2">🎉</span>
-                        <strong class="block mt-2 text-sm text-primary">Your mistake bucket is empty!</strong>
-                        <p class="text-xs text-secondary mt-1 max-w-sm mx-auto">Outstanding typing! Any words you misspell in Practice or Exam sessions will show up here as review lessons.</p>
+                    <div class="exam-empty-state col-span-full py-16 text-center border border-[var(--border-color)] bg-gradient-to-br from-white/5 to-white/0 rounded-3xl p-10 max-w-xl mx-auto shadow-2xl relative overflow-hidden" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(245, 158, 11, 0.03)); border-color: rgba(16, 185, 129, 0.25);">
+                        <div class="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
+                        <div class="w-16 h-16 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-3xl rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-950/20 animate-bounce">
+                            ✓
+                        </div>
+                        <h3 class="text-2xl font-black text-primary tracking-tight mb-2" style="background: linear-gradient(120deg, var(--text-primary), var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">All Clear! You are Unstoppable</h3>
+                        <p class="text-xs text-secondary mt-2 max-w-md mx-auto leading-relaxed">
+                            Your mistake bucket is completely empty. Every single typing error you made has been refined, practiced, and graduated!
+                        </p>
+                        <div class="mt-6 flex flex-wrap justify-center gap-3">
+                            <span class="text-[0.65rem] bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 px-3 py-1 rounded-full font-bold uppercase tracking-wider">100% Corrected</span>
+                            <span class="text-[0.65rem] bg-amber-500/10 text-amber-400 border border-amber-500/15 px-3 py-1 rounded-full font-bold uppercase tracking-wider">Precision Maxed</span>
+                        </div>
                     </div>
                 `;
                 return;
