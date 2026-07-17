@@ -677,7 +677,12 @@
         <header class="exam-console-header">
             <div style="display: flex; flex-direction: column;">
                 <p id="exam-console-exam-name" class="exam-kicker">JKSSB Junior Assistant</p>
-                <h1>Real Exam Simulation</h1>
+                <h1 style="display: flex; align-items: center; gap: 8px;">
+                    Real Exam Simulation
+                    <button id="exam-header-info-btn" class="text-white/70 hover:text-white transition duration-200" title="View exam instructions" type="button" style="background: none; border: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-circle-info text-base"></i>
+                    </button>
+                </h1>
             </div>
             <div class="exam-candidate-grid">
                 <span>Name <strong id="exam-candidate-name">SUBI</strong></span>
@@ -708,7 +713,7 @@
                 <span>Live Test</span>
             </div>
             <div>
-                <button id="exam-guide-btn" class="exam-action secondary" type="button">Info</button>
+                <button id="exam-reset-btn" class="exam-action secondary" type="button">Reset</button>
                 <button id="exam-cancel-btn" class="exam-action danger" type="button">Cancel Test</button>
                 <button id="exam-submit-btn" class="exam-action primary" type="button">Submit Test</button>
             </div>

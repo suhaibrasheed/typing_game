@@ -102,11 +102,12 @@
         const closeInfoModal = () => {
             $('exam-info-modal').classList.remove('active');
         };
-        $('exam-guide-btn').addEventListener('click', () => {
+        $('exam-header-info-btn').addEventListener('click', () => {
             $('exam-info-modal').classList.add('active');
         });
         $('exam-info-modal-close').addEventListener('click', closeInfoModal);
         $('exam-info-modal-ok').addEventListener('click', closeInfoModal);
+        $('exam-reset-btn').addEventListener('click', requestReset);
         
         // Custom exam selection dropdown
         const dropBtn = $('exam-dropdown-btn');
@@ -680,7 +681,13 @@
         closeConfirmation();
         if (action === 'cancel') {
             running = false; clearInterval(intervalId); closeConsole();
+        } else if (action === 'reset') {
+            start(passage);
         }
+    }
+    function requestReset() {
+        if (!running) return;
+        showConfirmation('reset', 'Restart this test?', 'Everything typed so far will be cleared and the timer will restart from the beginning.', 'Restart');
     }
     function cancel() {
         if (!running) { closeConsole(); return; }
