@@ -42,7 +42,7 @@
     let remaining = 600, elapsed = 0, intervalId = null, passage = null, running = false, callbacks = {}, pendingConfirmation = null;
     let blindTranscript = false;
     let examWordIndices = [], examCharTimestamps = [], examWordPauses = [], examLastKeystrokeTime = null;
-    let userProfile = null, lastResult = null, showingOriginal = false;
+    let userProfile = null, lastResult = null, showingOriginal = false, examLastActiveIdx = null;
     const $ = id => document.getElementById(id);
 
     function normalizeString(str) {
@@ -321,6 +321,7 @@
         examWordPauses = [];
         examLastKeystrokeTime = null;
 
+        examLastActiveIdx = null;
         $('exam-response').value = '';
         $('exam-result-overlay').classList.add('hidden');
         $('exam-console').classList.remove('hidden');
@@ -430,7 +431,10 @@
         allSpans.forEach((span, idx) => {
             if (idx === activeIdx) {
                 span.classList.add('active');
-                span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                if (activeIdx !== examLastActiveIdx) {
+                    examLastActiveIdx = activeIdx;
+                    span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
             } else {
                 span.classList.remove('active');
             }
@@ -485,23 +489,24 @@
         // If in Blind Transcript mode, the candidate can skip or add words freely.
         // We use a dynamic programming Levenshtein-based alignment to find insertions and omissions robustly.
         // To prevent penalizing untyped text at the end of long articles, we limit the DP matching boundary.
+        // We use scaled integer costs (Match=0, Substitution=3, Insertion/Deletion=2) to avoid floating point precision hazards.
         const N = typedTokens.length;
         const M = Math.min(sourceTokens.length, N + 30);
         const dp = Array.from({ length: M + 1 }, () => new Int32Array(N + 1));
         
-        for (let i = 0; i <= M; i++) dp[i][0] = i;
-        for (let j = 0; j <= N; j++) dp[0][j] = j;
+        for (let i = 0; i <= M; i++) dp[i][0] = i * 2;
+        for (let j = 0; j <= N; j++) dp[0][j] = j * 2;
         
         for (let i = 1; i <= M; i++) {
             const sLower = wordParts(sourceTokens[i - 1]).canonical;
             for (let j = 1; j <= N; j++) {
                 const tLower = wordParts(typedTokens[j - 1]).canonical;
-                const cost = sLower === tLower ? 0 : 1.5; // Cost of 1.5 prefers a substitution over an insertion + deletion (cost 2)
+                const cost = sLower === tLower ? 0 : 3; // Cost of 3 (scaled) prefers a substitution over insertion + deletion (cost 4)
                 
                 dp[i][j] = Math.min(
                     dp[i - 1][j - 1] + cost, // subst/match
-                    dp[i - 1][j] + 1,       // omit (deletion)
-                    dp[i][j - 1] + 1        // add (insertion)
+                    dp[i - 1][j] + 2,       // omit (deletion)
+                    dp[i][j - 1] + 2        // add (insertion)
                 );
             }
         }
@@ -519,12 +524,15 @@
         const pairs = [];
         let i = bestI, j = N;
         while (i > 0 || j > 0) {
+            const lastI = i;
+            const lastJ = j;
+            
             if (i > 0 && j > 0) {
                 const sToken = sourceTokens[i - 1];
                 const tToken = typedTokens[j - 1];
                 const sLower = wordParts(sToken).canonical;
                 const tLower = wordParts(tToken).canonical;
-                const cost = sLower === tLower ? 0 : 1.5;
+                const cost = sLower === tLower ? 0 : 3;
                 
                 if (dp[i][j] === dp[i - 1][j - 1] + cost) {
                     if (cost === 0) {
@@ -536,15 +544,29 @@
                     continue;
                 }
             }
-            if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) {
+            if (i > 0 && dp[i][j] === dp[i - 1][j] + 2) {
                 pairs.push({ action: 'omit', source: sourceTokens[i - 1], typed: '' });
                 i--;
                 continue;
             }
-            if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) {
+            if (j > 0 && dp[i][j] === dp[i][j - 1] + 2) {
                 pairs.push({ action: 'add', source: '', typed: typedTokens[j - 1] });
                 j--;
                 continue;
+            }
+            
+            // Safety fallback: if floating point rounding or matching logic gets stuck, force decrement to prevent hanging
+            if (i === lastI && j === lastJ) {
+                if (i > 0 && j > 0) {
+                    pairs.push({ action: 'wrong', source: sourceTokens[i - 1], typed: typedTokens[j - 1] });
+                    i--; j--;
+                } else if (i > 0) {
+                    pairs.push({ action: 'omit', source: sourceTokens[i - 1], typed: '' });
+                    i--;
+                } else {
+                    pairs.push({ action: 'add', source: '', typed: typedTokens[j - 1] });
+                    j--;
+                }
             }
         }
         return pairs.reverse();
