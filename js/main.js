@@ -737,6 +737,10 @@
         const inputTitle = document.getElementById('manual-input-title');
         const inputText = document.getElementById('manual-input-text');
 
+        const importBtn = document.getElementById('manual-import-btn');
+        const exportBtn = document.getElementById('manual-export-btn');
+        const importInput = document.getElementById('manual-import-input');
+
         // Render library list
         async function renderLibrary() {
             if (!libraryList) return;
@@ -745,8 +749,8 @@
 
             if (passages.length === 0) {
                 libraryList.innerHTML = `
-                    <div class="text-center py-8 text-secondary font-medium text-xs">
-                        <i class="fa-solid fa-folder-open text-2xl mb-2 opacity-50 block"></i>
+                    <div class="col-span-full text-center py-16 text-secondary font-medium text-xs">
+                        <i class="fa-solid fa-folder-open text-3xl mb-3 opacity-50 block"></i>
                         No custom passages saved yet.
                     </div>
                 `;
@@ -763,20 +767,27 @@
                 item.innerHTML = `
                     <div class="manual-passage-info">
                         <span class="manual-passage-title">${escapeHTML(p.title)}</span>
-                        <span class="manual-passage-meta">${date} · ${wordCount} words</span>
+                        <span class="manual-passage-meta">
+                            <i class="fa-regular fa-calendar-days opacity-60"></i> ${date} &nbsp;·&nbsp; 
+                            <i class="fa-solid fa-calculator opacity-60"></i> ${wordCount} words
+                        </span>
                     </div>
                     <div class="manual-passage-actions">
-                        <button class="manual-action-btn play" title="Start exam with this passage" type="button">
-                            <i class="fa-solid fa-play"></i>
-                        </button>
                         <button class="manual-action-btn delete" title="Delete passage" type="button">
                             <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        <button class="manual-action-btn play" title="Start exam with this passage" type="button">
+                            <i class="fa-solid fa-play"></i>
                         </button>
                     </div>
                 `;
 
-                // Bind actions
-                item.querySelector('.play').addEventListener('click', () => {
+                // Clicking the entire card triggers play
+                item.addEventListener('click', (e) => {
+                    // Do not trigger play if the delete button or its icon was clicked
+                    if (e.target.closest('.delete')) {
+                        return;
+                    }
                     SoundEngine.playTapSound();
                     ModalsUI.hideModal('manual-passage-modal');
                     window.ExamEngine.start(p);
@@ -891,6 +902,129 @@
             inputTitle.value = '';
             inputText.value = '';
         });
+
+        // Import click handler
+        if (importBtn && importInput) {
+            importBtn.addEventListener('click', () => {
+                SoundEngine.playTapSound();
+                importInput.click();
+            });
+
+            importInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const fileName = file.name.toLowerCase();
+
+                try {
+                    let passages = [];
+
+                    if (fileName.endsWith('.json')) {
+                        // Universal JSON format
+                        const jsonText = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = () => reject(reader.error);
+                            reader.readAsText(file);
+                        });
+                        const parsed = JSON.parse(jsonText);
+                        passages = Array.isArray(parsed) ? parsed : [parsed];
+                    } else if (fileName.endsWith('.zip')) {
+                        // ZIP format
+                        const zip = await JSZip.loadAsync(file);
+                        const jsonFile = zip.file("custom_passages.json");
+                        if (jsonFile) {
+                            const jsonText = await jsonFile.async("text");
+                            const parsed = JSON.parse(jsonText);
+                            passages = Array.isArray(parsed) ? parsed : [parsed];
+                        } else {
+                            const txtFiles = [];
+                            zip.forEach((relativePath, zipEntry) => {
+                                if (!zipEntry.dir && (relativePath.endsWith(".txt") || relativePath.endsWith(".json"))) {
+                                    txtFiles.push(zipEntry);
+                                }
+                            });
+
+                            for (const entry of txtFiles) {
+                                const contentText = await entry.async("text");
+                                let title = entry.name.replace(/\.[^/.]+$/, "");
+                                let text = contentText;
+
+                                if (entry.name.endsWith(".json")) {
+                                    try {
+                                        const parsed = JSON.parse(contentText);
+                                        if (Array.isArray(parsed)) {
+                                            passages.push(...parsed);
+                                            continue;
+                                        } else if (parsed.text) {
+                                            title = parsed.title || title;
+                                            text = parsed.text;
+                                        }
+                                    } catch (e) {}
+                                }
+
+                                if (text && text.trim()) {
+                                    passages.push({ title, text: text.trim() });
+                                }
+                            }
+                        }
+                    }
+
+                    // Save passages to DB
+                    let importedCount = 0;
+                    for (const p of passages) {
+                        if (p.text) {
+                            await StorageDB.saveManualPassage({ title: p.title || "Imported Passage", text: p.text });
+                            importedCount++;
+                        }
+                    }
+
+                    if (importedCount > 0) {
+                        showToast(`Imported ${importedCount} passage(s) successfully`);
+                        renderLibrary();
+                    } else {
+                        showToast("No valid passages found in file", { warning: true });
+                    }
+                } catch (err) {
+                    console.error("Import error:", err);
+                    showToast("Failed to parse file", { warning: true });
+                } finally {
+                    importInput.value = "";
+                }
+            });
+        }
+
+        // Export click handler
+        if (exportBtn) {
+            exportBtn.addEventListener('click', async () => {
+                SoundEngine.playTapSound();
+                const passages = await StorageDB.getManualPassages();
+                if (passages.length === 0) {
+                    showToast("No custom passages to export", { warning: true });
+                    return;
+                }
+
+                try {
+                    const zip = new JSZip();
+                    const cleanPassages = passages.map(p => ({ title: p.title, text: p.text }));
+                    zip.file("custom_passages.json", JSON.stringify(cleanPassages, null, 2));
+
+                    const content = await zip.generateAsync({ type: "blob" });
+                    const url = URL.createObjectURL(content);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `custom_passages_${new Date().toISOString().slice(0,10)}.zip`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    showToast("Custom passages exported successfully");
+                } catch (err) {
+                    console.error("Export error:", err);
+                    showToast("Failed to generate zip file", { warning: true });
+                }
+            });
+        }
     }
 
     window.syncDataAndDrawUI = syncDataAndDrawUI;

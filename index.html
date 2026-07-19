@@ -579,10 +579,23 @@
     <div id="manual-passage-modal" class="modal-container">
         <div class="modal-backdrop"></div>
         <div class="modal-content relative max-w-3xl overflow-hidden">
-            <button class="modal-close" aria-label="Close modal">&times;</button>
-            <h3 class="text-xl font-black text-primary mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-book-open text-lg text-[var(--accent-primary)]"></i>
-                Custom Passages
+            <h3 class="text-xl font-black text-primary mb-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-lg text-[var(--accent-primary)]"></i>
+                    Custom Passages
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="manual-import-btn" class="manual-header-icon-btn" title="Import Custom Passages" type="button">
+                        <i class="fa-solid fa-file-import"></i>
+                    </button>
+                    <button id="manual-export-btn" class="manual-header-icon-btn" title="Export Custom Passages" type="button">
+                        <i class="fa-solid fa-file-export"></i>
+                    </button>
+                    <button class="modal-close" aria-label="Close modal" type="button">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <input type="file" id="manual-import-input" accept=".zip,.json" class="hidden">
+                </div>
             </h3>
             
             <!-- Tab headers -->
@@ -597,7 +610,7 @@
             
             <!-- Library View -->
             <div id="manual-view-library" class="space-y-4">
-                <div id="manual-library-list" class="max-h-[420px] overflow-y-auto space-y-3 pr-1">
+                <div id="manual-library-list" class="overflow-y-auto space-y-3 pr-1">
                     <!-- Dynamic library list elements go here -->
                 </div>
             </div>
@@ -801,6 +814,7 @@
     <!-- Global Confetti Container -->
     <div id="global-confetti-container" style="position: fixed; inset: 0; z-index: 99999; pointer-events: none; overflow: hidden;"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
