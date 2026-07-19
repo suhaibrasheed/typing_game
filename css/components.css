@@ -966,31 +966,31 @@ input[type=range]::-webkit-slider-thumb {
 
 #manual-library-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 0.25rem;
     overflow-y: auto;
     flex: 1;
     padding-right: 0.5rem;
     min-height: 0;
 }
 
-.manual-passage-item {
+.manual-passage-tile {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
-    border-radius: 1.25rem;
-    padding: 1.25rem;
+    border-radius: 1rem;
+    padding: 1.5rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: space-between;
-    align-items: stretch;
-    gap: 1.25rem;
+    align-items: center;
+    gap: 1.5rem;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
 
-.manual-passage-item::before {
+.manual-passage-tile::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -1000,51 +1000,45 @@ input[type=range]::-webkit-slider-thumb {
     pointer-events: none;
 }
 
-.manual-passage-item:hover {
-    transform: translateY(-3px);
+.manual-passage-tile:hover {
+    transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--accent-primary) 30%, var(--border-color));
     background: rgba(255, 255, 255, 0.04);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px color-mix(in srgb, var(--accent-primary) 10%, transparent);
 }
 
-.manual-passage-item:hover::before {
+.manual-passage-tile:hover::before {
     opacity: 1;
 }
 
-.manual-passage-info {
+.manual-passage-tile-info {
     text-align: left;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     flex: 1;
+    min-width: 0;
 }
 
-.manual-passage-title {
+.manual-passage-tile-title {
     font-weight: 800;
     color: var(--text-primary);
     font-size: 0.95rem;
     line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
 }
 
-.manual-passage-meta {
+.manual-passage-tile-meta {
     font-size: 0.7rem;
     color: var(--text-secondary);
     font-weight: 600;
 }
 
-.manual-passage-actions {
+.manual-passage-tile-actions {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     gap: 0.75rem;
-    margin-top: auto;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding-top: 0.75rem;
     z-index: 2;
+    flex-shrink: 0;
 }
 
 .manual-action-btn {

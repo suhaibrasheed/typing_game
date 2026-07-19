@@ -759,20 +759,24 @@
 
             passages.forEach(p => {
                 const item = document.createElement('div');
-                item.className = 'manual-passage-item';
+                item.className = 'manual-passage-tile';
                 
                 const wordCount = p.text.trim().split(/\s+/).filter(Boolean).length;
                 const date = new Date(p.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
+                // Truncate title to 5 words to prevent horizontal wrapping and squishing
+                const words = p.title.trim().split(/\s+/);
+                const truncatedTitle = words.length > 5 ? words.slice(0, 5).join(' ') + '...' : p.title;
+
                 item.innerHTML = `
-                    <div class="manual-passage-info">
-                        <span class="manual-passage-title">${escapeHTML(p.title)}</span>
-                        <span class="manual-passage-meta">
+                    <div class="manual-passage-tile-info">
+                        <span class="manual-passage-tile-title">${escapeHTML(truncatedTitle)}</span>
+                        <span class="manual-passage-tile-meta">
                             <i class="fa-regular fa-calendar-days opacity-60"></i> ${date} &nbsp;·&nbsp; 
                             <i class="fa-solid fa-calculator opacity-60"></i> ${wordCount} words
                         </span>
                     </div>
-                    <div class="manual-passage-actions">
+                    <div class="manual-passage-tile-actions">
                         <button class="manual-action-btn delete" title="Delete passage" type="button">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -784,7 +788,6 @@
 
                 // Clicking the entire card triggers play
                 item.addEventListener('click', (e) => {
-                    // Do not trigger play if the delete button or its icon was clicked
                     if (e.target.closest('.delete')) {
                         return;
                     }
