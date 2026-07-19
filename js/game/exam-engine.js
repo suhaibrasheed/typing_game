@@ -45,6 +45,14 @@
     let userProfile = null, lastResult = null, showingOriginal = false;
     const $ = id => document.getElementById(id);
 
+    function normalizeString(str) {
+        if (!str) return '';
+        return str
+            .replace(/[’‘`´]/g, "'")
+            .replace(/[“”]/g, '"')
+            .replace(/[–—]/g, '-');
+    }
+
     function init(options = {}) {
         callbacks = options;
         userProfile = options.profile || {};
@@ -439,8 +447,10 @@
     }
 
     function wordParts(token) {
-        const lexical = token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
-        const punctuation = token.slice(0, token.indexOf(lexical) < 0 ? 0 : token.indexOf(lexical)) + token.slice(token.indexOf(lexical) + lexical.length);
+        if (!token) return { lexical: '', canonical: '', punctuation: '' };
+        const normalized = normalizeString(token);
+        const lexical = normalized.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+        const punctuation = normalized.slice(0, normalized.indexOf(lexical) < 0 ? 0 : normalized.indexOf(lexical)) + normalized.slice(normalized.indexOf(lexical) + lexical.length);
         return { lexical, canonical: lexical.toLocaleLowerCase('en-IN'), punctuation };
     }
 

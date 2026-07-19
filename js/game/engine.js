@@ -24,6 +24,14 @@
         levelSelectionView: () => document.getElementById('level-selection-view')
     };
 
+    function normalizeString(str) {
+        if (!str) return '';
+        return str
+            .replace(/[’‘`´]/g, "'")
+            .replace(/[“”]/g, '"')
+            .replace(/[–—]/g, '-');
+    }
+
     // Shuffles an array to create randomized practice content
     function shuffleArray(array) {
         return array.sort(() => Math.random() - 0.5);
@@ -180,7 +188,7 @@
             const typedChar = typedValue[index];
             if (typedChar == null) {
                 charSpan.className = '';
-            } else if (typedChar === charSpan.textContent) {
+            } else if (normalizeString(typedChar) === normalizeString(charSpan.textContent)) {
                 charSpan.className = 'correct';
                 correctChars++;
             } else {
@@ -202,7 +210,7 @@
 
         if (!isDeletion && typedValue.length > 0) {
             const lastIndex = typedValue.length - 1;
-            const isNewCharCorrect = typedValue[lastIndex] === charSpans[lastIndex].textContent;
+            const isNewCharCorrect = normalizeString(typedValue[lastIndex]) === normalizeString(charSpans[lastIndex].textContent);
 
             if (!isNewCharCorrect) {
                 // Newly typed character is incorrect - trigger error feedback
