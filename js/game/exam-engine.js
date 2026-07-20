@@ -439,6 +439,18 @@
                 span.classList.remove('active');
             }
         });
+
+        // Auto-end the exam if the user has completed typing the full passage
+        const typedWordsList = responseText.trim().split(/\s+/).filter(Boolean);
+        const sourceWordsList = (passage && passage.text) ? passage.text.trim().split(/\s+/).filter(Boolean) : [];
+        if (sourceWordsList.length > 0 && typedWordsList.length >= sourceWordsList.length) {
+            const lastWordIdx = sourceWordsList.length - 1;
+            const lastTypedWord = typedWordsList[lastWordIdx] || "";
+            const lastSourceWord = sourceWordsList[lastWordIdx] || "";
+            if (lastTypedWord.length >= lastSourceWord.length) {
+                finish(false);
+            }
+        }
     }
 
     function updateTimer() {
