@@ -352,6 +352,19 @@
         });
     }
 
+    function updateManualPassage(id, passage) {
+        return new Promise((resolve, reject) => {
+            const store = getStore("manual_passages", "readwrite");
+            const request = store.put({
+                id: id,
+                ...passage,
+                timestamp: Date.now()
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     window.StorageDB = {
         initDB,
         getUserProfile,
@@ -368,6 +381,7 @@
         getMistakeWordsRaw,
         removeMistakeWords,
         saveManualPassage,
+        updateManualPassage,
         getManualPassages,
         deleteManualPassage
     };

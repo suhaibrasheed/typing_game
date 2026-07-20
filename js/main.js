@@ -741,6 +741,8 @@
         const exportBtn = document.getElementById('manual-export-btn');
         const importInput = document.getElementById('manual-import-input');
 
+        let editingPassageId = null;
+
         // Render library list
         async function renderLibrary() {
             if (!libraryList) return;
@@ -764,19 +766,18 @@
                 const wordCount = p.text.trim().split(/\s+/).filter(Boolean).length;
                 const date = new Date(p.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
-                // Truncate title to 5 words to prevent horizontal wrapping and squishing
-                const words = p.title.trim().split(/\s+/);
-                const truncatedTitle = words.length > 5 ? words.slice(0, 5).join(' ') + '...' : p.title;
-
                 item.innerHTML = `
                     <div class="manual-passage-tile-info">
-                        <span class="manual-passage-tile-title">${escapeHTML(truncatedTitle)}</span>
+                        <span class="manual-passage-tile-title">${escapeHTML(p.title)}</span>
                         <span class="manual-passage-tile-meta">
                             <i class="fa-regular fa-calendar-days opacity-60"></i> ${date} &nbsp;·&nbsp; 
                             <i class="fa-solid fa-calculator opacity-60"></i> ${wordCount} words
                         </span>
                     </div>
                     <div class="manual-passage-tile-actions">
+                        <button class="manual-action-btn edit" title="Edit passage" type="button">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
                         <button class="manual-action-btn delete" title="Delete passage" type="button">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -788,12 +789,24 @@
 
                 // Clicking the entire card triggers play
                 item.addEventListener('click', (e) => {
-                    if (e.target.closest('.delete')) {
+                    if (e.target.closest('.delete') || e.target.closest('.edit')) {
                         return;
                     }
                     SoundEngine.playTapSound();
                     ModalsUI.hideModal('manual-passage-modal');
                     window.ExamEngine.start(p);
+                });
+
+                item.querySelector('.edit').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    SoundEngine.playTapSound();
+                    editingPassageId = p.id;
+                    inputTitle.value = p.title;
+                    inputText.value = p.text;
+                    saveBtn.textContent = 'Update Passage';
+                    startBtn.textContent = 'Update & Start';
+                    tabNewBtn.textContent = 'Edit Passage';
+                    switchTab('new');
                 });
 
                 item.querySelector('.delete').addEventListener('click', async (e) => {
@@ -830,6 +843,16 @@
                 tabNewBtn.className = 'flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-secondary hover:text-primary transition';
                 viewLibrary.classList.remove('hidden');
                 viewNew.classList.add('hidden');
+
+                // Cancel editing state when switching back to library
+                if (editingPassageId !== null) {
+                    editingPassageId = null;
+                    inputTitle.value = '';
+                    inputText.value = '';
+                    saveBtn.textContent = 'Save to Library';
+                    startBtn.textContent = 'Done & Start';
+                    tabNewBtn.textContent = 'New Passage';
+                }
             } else {
                 tabNewBtn.className = 'flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-[var(--accent-primary)] text-primary';
                 tabLibraryBtn.className = 'flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-secondary hover:text-primary transition';
@@ -839,7 +862,19 @@
         }
 
         tabLibraryBtn.addEventListener('click', () => { SoundEngine.playTapSound(); switchTab('library'); });
-        tabNewBtn.addEventListener('click', () => { SoundEngine.playTapSound(); switchTab('new'); });
+        tabNewBtn.addEventListener('click', () => { 
+            SoundEngine.playTapSound(); 
+            // If they clicked the New tab directly, we clear any active edit state
+            if (editingPassageId !== null) {
+                editingPassageId = null;
+                inputTitle.value = '';
+                inputText.value = '';
+                saveBtn.textContent = 'Save to Library';
+                startBtn.textContent = 'Done & Start';
+                tabNewBtn.textContent = 'New Passage';
+            }
+            switchTab('new'); 
+        });
 
         // Clipboard Paste
         pasteBtn.addEventListener('click', async () => {
@@ -870,8 +905,17 @@
                 title = `Custom Passage - ${new Date().toLocaleDateString()}`;
             }
 
-            await StorageDB.saveManualPassage({ title, text });
-            showToast('Passage saved to library');
+            if (editingPassageId !== null) {
+                await StorageDB.updateManualPassage(editingPassageId, { title, text });
+                showToast('Passage updated');
+                editingPassageId = null;
+                saveBtn.textContent = 'Save to Library';
+                startBtn.textContent = 'Done & Start';
+                tabNewBtn.textContent = 'New Passage';
+            } else {
+                await StorageDB.saveManualPassage({ title, text });
+                showToast('Passage saved to library');
+            }
             
             // Reset fields
             inputTitle.value = '';
@@ -894,8 +938,17 @@
                 title = `Custom Passage - ${new Date().toLocaleDateString()}`;
             }
 
-            // Save to DB for future use
-            const id = await StorageDB.saveManualPassage({ title, text });
+            let id = editingPassageId;
+            if (id !== null) {
+                await StorageDB.updateManualPassage(id, { title, text });
+                showToast('Passage updated');
+                editingPassageId = null;
+                saveBtn.textContent = 'Save to Library';
+                startBtn.textContent = 'Done & Start';
+                tabNewBtn.textContent = 'New Passage';
+            } else {
+                id = await StorageDB.saveManualPassage({ title, text });
+            }
             
             // Start exam mode
             ModalsUI.hideModal('manual-passage-modal');
